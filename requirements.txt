@@ -1,0 +1,49 @@
+# Core dependencies
+langchain>=0.1.0
+unstructured>=0.10.0
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+fastapi>=0.100.0
+uvicorn>=0.20.0
+
+# Vector database
+pymilvus>=2.3.3
+faiss-cpu>=1.7.4
+
+# Document processing
+python-magic>=0.4.27
+python-magic-bin>=0.4.14; platform_system == "Windows"
+pdf2image>=1.16.3
+pytesseract>=0.3.10
+python-docx>=0.8.11
+openpyxl>=3.1.2
+beautifulsoup4>=4.12.0
+markdown>=3.4.3
+
+# Machine learning and vectorization
+torch>=2.0.0
+transformers>=4.30.0
+sentence-transformers>=2.2.2
+
+# Monitoring and logging
+prometheus-client>=0.17.0
+python-json-logger>=2.0.7
+
+# Utils and helper libraries
+tqdm>=4.65.0
+requests>=2.31.0
+aiohttp>=3.8.5
+tenacity>=8.2.2
+jieba>=0.42.1
+ollama>=0.1.0
+python-multipart>=0.0.12
+
+langchain-community>=0.1.0
+langchain-huggingface>=0.1.0
+
+langchain-core~=0.3.40
+prometheus_client~=0.21.1
+numpy~=1.26.4
+pandas~=2.2.3
+scikit-learn~=1.6.1
+gensim~=4.3.3
