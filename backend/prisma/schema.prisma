@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  documents Document[]
+  queries   Query[]
+}
+
+model Document {
+  id            String           @id @default(cuid())
+  filename      String
+  originalName  String
+  mimeType      String
+  size          Int
+  status        DocumentStatus   @default(PENDING)
+  uploadedBy    String
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  
+  user          User            @relation(fields: [uploadedBy], references: [id])
+  chunks        DocumentChunk[]
+}
+
+model DocumentChunk {
+  id         String   @id @default(cuid())
+  documentId String
+  content    String
+  chunkIndex Int
+  vectorId   String   // Milvus vector ID
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  
+  document   Document @relation(fields: [documentId], references: [id])
+}
+
+model Query {
+  id          String   @id @default(cuid())
+  text        String
+  response    String?
+  userId      String
+  responseTime Int?    // 响应时间(ms)
+  createdAt   DateTime @default(now())
+  
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+enum DocumentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}

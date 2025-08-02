@@ -1,0 +1,6 @@
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.0
+pymilvus==2.3.4
+sentence-transformers==2.2.2
+requests==2.31.0

@@ -1,7 +1,148 @@
 version: '3.8'
 
 services:
-  # Milvus 相关服务
+  # 前端应用
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    stdin_open: true
+    tty: true
+
+  # Next.js后端
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/rag_db
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+      - MILVUS_HOST=milvus
+      - MILVUS_PORT=19530
+      - DOCUMENT_PROCESSOR_URL=http://document-processor:8001
+      - VECTOR_SERVICE_URL=http://vector-service:8002
+      - RAG_SERVICE_URL=http://rag-service:8003
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+      - milvus
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  # Python文档处理服务
+  document-processor:
+    build: 
+      context: ./python-services/document-processor
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      - rabbitmq
+    volumes:
+      - ./python-services/document-processor:/app
+      - ./python-services/shared:/app/shared
+
+  # Python向量化服务
+  vector-service:
+    build: 
+      context: ./python-services/vector-service
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      - MILVUS_HOST=milvus
+      - MILVUS_PORT=19530
+      - MILVUS_COLLECTION=document_store
+      - EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
+    depends_on:
+      - milvus
+    volumes:
+      - ./python-services/vector-service:/app
+      - ./python-services/shared:/app/shared
+
+  # Python RAG检索服务
+  rag-service:
+    build: 
+      context: ./python-services/rag-service
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      - MILVUS_HOST=milvus
+      - MILVUS_PORT=19530
+      - MILVUS_COLLECTION=document_store
+      - OLLAMA_BASE_URL=http://ollama:11434
+    depends_on:
+      - milvus
+      - ollama
+    volumes:
+      - ./python-services/rag-service:/app
+      - ./python-services/shared:/app/shared
+
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: rag_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Redis缓存
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # RabbitMQ消息队列
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Milvus 相关服务 (保留现有配置)
   etcd:
     container_name: milvus-etcd
     image: quay.io/coreos/etcd:v3.5.5
@@ -11,7 +152,7 @@ services:
       - ETCD_QUOTA_BACKEND_BYTES=4294967296
       - ETCD_SNAPSHOT_COUNT=50000
     volumes:
-      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/etcd:/etcd
+      - etcd_data:/etcd
     command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
     healthcheck:
       test: ["CMD", "etcdctl", "endpoint", "health"]
@@ -26,7 +167,7 @@ services:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
     volumes:
-      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/minio:/minio_data
+      - minio_data:/minio_data
     command: minio server /minio_data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
@@ -34,7 +175,7 @@ services:
       timeout: 20s
       retries: 3
 
-  standalone:
+  milvus:
     container_name: milvus-standalone
     image: milvusdb/milvus:v2.3.3
     command: ["milvus", "run", "standalone"]
@@ -42,27 +183,27 @@ services:
       ETCD_ENDPOINTS: etcd:2379
       MINIO_ADDRESS: minio:9000
     volumes:
-      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/milvus:/var/lib/milvus
+      - milvus_data:/var/lib/milvus
     ports:
       - "19530:19530"
       - "9091:9091"
     depends_on:
-      - "etcd"
-      - "minio"
+      - etcd
+      - minio
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9091/api/v1/health"]
       interval: 30s
       timeout: 20s
       retries: 3
 
-  # Ollama 服务（可选，如果使用 Ollama 作为 LLM provider）
+  # Ollama 服务
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
     ports:
       - "11434:11434"
     volumes:
-      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/ollama:/root/.ollama
+      - ollama_data:/root/.ollama
     deploy:
       resources:
         reservations:
@@ -71,51 +212,42 @@ services:
               count: 1
               capabilities: [gpu]
 
-  # 应用服务
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: ai-doc-processor
-    volumes:
-      - .:/app
-    ports:
-      - "8000:8000"
-      - "9090:9090"
-    environment:
-      - VECTOR_DB_TYPE=milvus
-      - MILVUS_HOST=standalone
-      - MILVUS_PORT=19530
-      - OLLAMA_BASE_URL=http://ollama:11434
-    depends_on:
-      - standalone
-      - ollama
-
-  # 监控服务
+  # 监控服务 (保留接口，暂不激活)
   prometheus:
     image: prom/prometheus:latest
     ports:
-      - "9092:9090"  # 改为9092避免端口冲突
+      - "9092:9090"
     volumes:
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
     restart: unless-stopped
+    profiles: ["monitoring"]
 
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3000:3000"
+      - "3002:3000"
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./config/grafana:/etc/grafana/provisioning
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
       - prometheus
     restart: unless-stopped
+    profiles: ["monitoring"]
 
 volumes:
-  grafana_data:
-  ollama_data:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  etcd_data:
+  minio_data:
   milvus_data:
-    driver: local 
+  ollama_data:
+  grafana_data:
+
+networks:
+  default:
+    driver: bridge
