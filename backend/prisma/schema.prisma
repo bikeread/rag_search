@@ -11,54 +11,137 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String?
+  password  String?  // 用于本地认证
+  role      UserRole @default(USER)
+  avatar    String?
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
+  // 关联关系
   documents Document[]
   queries   Query[]
+  sessions  Session[]
+  accounts  Account[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
 }
 
 model Document {
-  id            String           @id @default(cuid())
+  id            String          @id @default(cuid())
   filename      String
   originalName  String
   mimeType      String
   size          Int
-  status        DocumentStatus   @default(PENDING)
+  path          String?         // 文件存储路径
+  status        DocumentStatus  @default(PENDING)
   uploadedBy    String
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  
+  processingStartedAt DateTime?
+  processingCompletedAt DateTime?
+  errorMessage  String?
+  metadata      Json?           // 额外元数据
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // 关联关系
   user          User            @relation(fields: [uploadedBy], references: [id])
   chunks        DocumentChunk[]
+
+  @@map("documents")
 }
 
 model DocumentChunk {
-  id         String   @id @default(cuid())
-  documentId String
-  content    String
-  chunkIndex Int
-  vectorId   String   // Milvus vector ID
-  metadata   Json?
-  createdAt  DateTime @default(now())
-  
-  document   Document @relation(fields: [documentId], references: [id])
+  id          String   @id @default(cuid())
+  documentId  String
+  content     String   @db.Text
+  chunkIndex  Int
+  vectorId    String   // Milvus向量ID
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  // 关联关系
+  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, chunkIndex])
+  @@map("document_chunks")
 }
 
 model Query {
-  id          String   @id @default(cuid())
-  text        String
-  response    String?
+  id          String    @id @default(cuid())
+  text        String    @db.Text
+  response    String?   @db.Text
   userId      String
-  responseTime Int?    // 响应时间(ms)
-  createdAt   DateTime @default(now())
-  
-  user        User     @relation(fields: [userId], references: [id])
+  responseTime Int?     // 响应时间(ms)
+  sources     Json?     // 检索到的源文档
+  status      QueryStatus @default(PENDING)
+  metadata    Json?     // 查询元数据
+  createdAt   DateTime  @default(now())
+
+  // 关联关系
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@map("queries")
+}
+
+model SystemConfig {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  description String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("system_config")
+}
+
+// 枚举类型
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
 }
 
 enum DocumentStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  FAILED
+  PENDING      // 等待处理
+  PROCESSING   // 处理中
+  COMPLETED    // 处理完成
+  FAILED       // 处理失败
+  DELETED      // 已删除
+}
+
+enum QueryStatus {
+  PENDING      // 等待处理
+  PROCESSING   // 处理中
+  COMPLETED    // 完成
+  FAILED       // 失败
 }

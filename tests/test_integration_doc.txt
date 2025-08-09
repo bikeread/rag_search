@@ -1,0 +1,21 @@
+RAG系统集成测试文档
+
+这是一个用于测试RAG系统文档处理和向量化集成功能的测试文档。
+
+主要功能包括：
+1. 文档解析和文本提取
+2. 智能文本分块处理 
+3. 向量化转换和存储
+4. Milvus向量数据库集成
+
+测试场景：
+- 文档上传和处理
+- 文本分块和向量化
+- 向量存储和检索
+- 端到端的RAG流程验证
+
+这个文档包含了足够的文本内容来测试分块算法和向量化功能，确保系统能够正确处理中文和英文混合的文本内容。
+
+Additional English content to test multilingual processing capabilities.
+The system should be able to handle both Chinese and English text properly.
+This helps verify the robustness of the text processing pipeline.

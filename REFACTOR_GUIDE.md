@@ -5,6 +5,7 @@
 本文档指导将现有Python RAG系统重构为**React前端 + Next.js后端 + Python AI服务**的现代化全栈架构，实现前后端分离、微服务化，提升用户体验和系统可扩展性。
 
 ### 重构目标
+
 - ✅ **现代化前端**：React + Ant Design提供优秀用户体验
 - ✅ **高性能后端**：Next.js处理业务逻辑和API编排
 - ✅ **专业化AI服务**：Python专注文档处理和语义检索
@@ -14,6 +15,7 @@
 ## 重构架构设计
 
 ### 目标架构图
+
 ```mermaid
 graph TB
     subgraph "前端层 (React)"
@@ -60,6 +62,7 @@ graph TB
 ```
 
 ### 技术栈确定
+
 ```yaml
 前端技术栈:
   - React 18
@@ -92,9 +95,11 @@ AI服务技术栈:
 ## 阶段性重构计划
 
 ### 阶段1：基础架构搭建 (1-2周)
+
 **目标**：建立完整的开发环境和基础框架
 
 #### 1.1 项目结构重组
+
 ```
 rag-system/
 ├── frontend/                    # React前端
@@ -124,6 +129,7 @@ rag-system/
 ```
 
 #### 1.2 Docker环境配置
+
 ```yaml
 # docker-compose.yml
 version: '3.8'
@@ -202,6 +208,7 @@ volumes:
 ```
 
 #### 1.3 数据库设计
+
 ```sql
 -- PostgreSQL Schema (prisma/schema.prisma)
 model User {
@@ -262,11 +269,13 @@ enum DocumentStatus {
 ```
 
 ### 阶段2：Python服务重构 (2-3周)
+
 **目标**：将现有Python代码拆分为专业化微服务
 
 #### 2.1 现有代码迁移策略
 
 ##### 文档处理服务 (8001端口)
+
 ```python
 # python-services/document-processor/main.py
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -312,6 +321,7 @@ async def process_document(file: UploadFile = File(...)):
 ```
 
 ##### 向量化服务 (8002端口)
+
 ```python
 # python-services/vector-service/main.py
 from fastapi import FastAPI
@@ -366,6 +376,7 @@ async def vectorize_texts(texts: List[str]):
 ```
 
 ##### RAG检索服务 (8003端口)  
+
 ```python
 # python-services/rag-service/main.py
 from fastapi import FastAPI
@@ -414,6 +425,7 @@ async def query_documents(query: str, top_k: int = 3):
 ```
 
 #### 2.2 Milvus客户端优化
+
 ```python
 # python-services/shared/milvus_client.py
 from pymilvus import Collection, connections
@@ -504,9 +516,11 @@ class MilvusClient:
 ```
 
 ### 阶段3：Next.js后端开发 (2-3周)
+
 **目标**：构建完整的业务逻辑和API编排层
 
 #### 3.1 API Routes设计
+
 ```typescript
 // backend/src/pages/api/documents/upload.ts
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -616,6 +630,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 ```
 
 #### 3.2 Python服务客户端
+
 ```typescript
 // backend/src/services/pythonServices.ts
 import axios from 'axios';
@@ -664,6 +679,7 @@ export async function vectorizeTexts(texts: string[]) {
 ```
 
 #### 3.3 RabbitMQ消息处理
+
 ```typescript
 // backend/src/services/messageQueue.ts
 import amqp from 'amqplib';
@@ -728,9 +744,11 @@ messageQueue.connect().catch(console.error);
 ```
 
 ### 阶段4：React前端开发 (2-3周)
+
 **目标**：构建现代化用户界面
 
 #### 4.1 页面结构设计
+
 ```typescript
 // frontend/src/components/DocumentUpload.tsx
 import React, { useState } from 'react';
@@ -889,6 +907,7 @@ export const ChatInterface: React.FC = () => {
 ```
 
 #### 4.2 自定义Hooks
+
 ```typescript
 // frontend/src/hooks/useDocuments.ts
 import { useState } from 'react';
@@ -962,9 +981,11 @@ export const useQuery = () => {
 ```
 
 ### 阶段5：集成测试与优化 (1-2周)
+
 **目标**：确保整个系统稳定运行并进行性能优化
 
 #### 5.1 端到端测试流程
+
 ```typescript
 // 测试流程脚本
 const e2eTestFlow = {
@@ -991,6 +1012,7 @@ const e2eTestFlow = {
 ```
 
 #### 5.2 性能监控配置
+
 ```typescript
 // backend/src/middleware/monitoring.ts
 import { NextApiRequest, NextApiResponse } from 'next';
@@ -1023,6 +1045,7 @@ export const monitoringMiddleware = (handler: any) => {
 ## 现有代码迁移映射
 
 ### 保留的核心代码
+
 ```python
 # 完全保留 (移动到对应服务)
 src/data_processing/processors/          → document-processor/src/processors/
@@ -1043,6 +1066,7 @@ config/config.py                        # 分散到各服务的配置中
 ```
 
 ### 向量化模型升级建议
+
 ```python
 # 当前模型评估和替换
 current_models = {
@@ -1075,6 +1099,7 @@ recommended_models = {
 ## 部署和运维
 
 ### 环境变量配置
+
 ```bash
 # .env.example
 # Database
@@ -1101,6 +1126,7 @@ EMBEDDING_MODEL="sentence-transformers/all-MiniLM-L6-v2"
 ```
 
 ### 快速启动脚本
+
 ```bash
 #!/bin/bash
 # scripts/start-dev.sh
@@ -1134,30 +1160,35 @@ echo "RAG服务: http://localhost:8003"
 ## 成功验收标准
 
 ### 阶段1验收
+
 - ✅ Docker环境正常启动
 - ✅ 所有服务健康检查通过
 - ✅ 数据库连接正常
 - ✅ 基础API响应正常
 
 ### 阶段2验收  
+
 - ✅ 文档上传处理正常
 - ✅ 向量化服务正常工作
 - ✅ Milvus存储和检索正常
 - ✅ RAG查询返回正确结果
 
 ### 阶段3验收
+
 - ✅ Next.js API全部正常
 - ✅ 数据库CRUD操作正常
 - ✅ 缓存机制正常工作
 - ✅ 消息队列处理正常
 
 ### 阶段4验收
+
 - ✅ 前端页面正常渲染
 - ✅ 文档上传界面完整
 - ✅ 聊天界面功能正常
 - ✅ 用户体验流畅
 
 ### 最终验收
+
 - ✅ 完整的端到端流程正常
 - ✅ 并发处理能力满足要求
 - ✅ 错误处理机制完善
