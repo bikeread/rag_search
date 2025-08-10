@@ -57,3 +57,32 @@ export function getFrontendUrl(): string {
          process.env.NEXT_PUBLIC_FRONTEND_URL || 
          'http://localhost:3000'
 }
+
+/**
+ * 通用的API CORS处理器
+ * 用于包装API处理函数，自动处理CORS
+ */
+import { NextApiRequest, NextApiResponse } from 'next'
+
+type ApiHandler = (req: NextApiRequest, res: NextApiResponse) => Promise<void> | void
+
+export function withCors(handler: ApiHandler) {
+  return async (req: NextApiRequest, res: NextApiResponse) => {
+    const origin = req.headers.origin
+    
+    // 添加CORS头
+    const corsHeaders = getCorsHeaders(origin)
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      res.setHeader(key, value)
+    })
+    
+    // 处理OPTIONS预检请求
+    if (req.method === 'OPTIONS') {
+      res.status(200).end()
+      return
+    }
+    
+    // 调用原始处理函数
+    return handler(req, res)
+  }
+}

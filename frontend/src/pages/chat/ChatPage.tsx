@@ -12,11 +12,16 @@ const { Text, Paragraph } = Typography
 export const ChatPage: React.FC = () => {
   const [inputValue, setInputValue] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const { messages, isLoading, sendMessage, clearMessages } = useChatStore()
+  const { messages, isLoading, sendMessage, clearMessages, loadHistory } = useChatStore()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
+
+  useEffect(() => {
+    // 页面加载时加载用户历史记录
+    loadHistory()
+  }, [loadHistory])
 
   useEffect(() => {
     scrollToBottom()
@@ -136,12 +141,14 @@ const MessageItem: React.FC<{ message: ChatMessage }> = ({ message }) => {
                 {message.sources.map((source, index) => (
                   <div key={index} className="bg-white p-2 rounded border-l-4 border-blue-400">
                     <Text className="text-sm">
-                      {source.content.substring(0, 100)}
-                      {source.content.length > 100 && '...'}
+                      {source?.content ? 
+                        (source.content.substring(0, 100) + (source.content.length > 100 ? '...' : '')) :
+                        '内容不可用'
+                      }
                     </Text>
                     <div className="mt-1">
                       <Tag color="blue">
-                        相似度: {(source.score * 100).toFixed(1)}%
+                        相似度: {source?.score ? (source.score * 100).toFixed(1) : '0.0'}%
                       </Tag>
                     </div>
                   </div>

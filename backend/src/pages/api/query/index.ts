@@ -1,21 +1,28 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import jwt from 'jsonwebtoken'
 import { prisma } from '@/lib/prisma'
 import { ragService } from '@/services/pythonServices'
 import { CacheService } from '@/lib/redis'
 import { querySchema } from '@/lib/validation'
+import { withCors } from '@/lib/cors'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
-    const session = await getServerSession(req, res, authOptions)
-    if (!session) {
-      return res.status(401).json({ error: 'Unauthorized' })
+    // JWT验证
+    const authorization = req.headers.authorization
+    if (!authorization || !authorization.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided' })
     }
+
+    const token = authorization.substring(7)
+    const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
+    
+    const decoded = jwt.verify(token, JWT_SECRET) as any
+    const userId = decoded.userId
 
     // 验证请求数据
     const validation = querySchema.safeParse(req.body)
@@ -46,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const queryRecord = await prisma.query.create({
       data: {
         text: query,
-        userId: (session.user as any).id,
+        userId: userId,
         status: 'PROCESSING',
       }
     })
@@ -118,3 +125,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
   }
 }
+
+export default withCors(handler)

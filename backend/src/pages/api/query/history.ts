@@ -1,18 +1,25 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
+import jwt from 'jsonwebtoken'
 import { prisma } from '@/lib/prisma'
+import { withCors } from '@/lib/cors'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
-    const session = await getServerSession(req, res, authOptions)
-    if (!session) {
-      return res.status(401).json({ error: 'Unauthorized' })
+    // JWT验证 - 与query API保持一致
+    const authorization = req.headers.authorization
+    if (!authorization || !authorization.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided' })
     }
+
+    const token = authorization.substring(7)
+    const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
+    
+    const decoded = jwt.verify(token, JWT_SECRET) as any
+    const userId = decoded.userId
 
     const { page = '1', limit = '20', status } = req.query
 
@@ -21,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const offset = (pageNum - 1) * limitNum
 
     const where: any = {
-      userId: (session.user as any).id,
+      userId: userId,
     }
 
     if (status && typeof status === 'string') {
@@ -66,3 +73,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(500).json({ error: 'Failed to get query history' })
   }
 }
+
+export default withCors(handler)

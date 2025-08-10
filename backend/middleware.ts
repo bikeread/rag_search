@@ -46,17 +46,26 @@ function getCorsHeaders(origin?: string | null): Record<string, string> {
  */
 export function middleware(request: NextRequest) {
   const origin = request.headers.get('origin')
+  const { pathname } = request.nextUrl
+  
+  // 只处理API路由
+  if (!pathname.startsWith('/api/')) {
+    return NextResponse.next()
+  }
   
   // 添加调试日志
-  console.log(`[Middleware] ${request.method} ${request.url} from ${origin}`)
+  console.log(`[CORS Middleware] ${request.method} ${pathname} from ${origin}`)
   
   // 处理OPTIONS预检请求
   if (request.method === 'OPTIONS') {
-    console.log('[Middleware] Handling OPTIONS preflight request')
-    return new NextResponse(null, {
+    console.log('[CORS Middleware] Handling OPTIONS preflight request')
+    const corsHeaders = getCorsHeaders(origin)
+    const response = new NextResponse(null, {
       status: 200,
-      headers: getCorsHeaders(origin)
+      headers: corsHeaders
     })
+    console.log('[CORS Middleware] OPTIONS response headers:', Object.keys(corsHeaders))
+    return response
   }
 
   // 对于其他请求，继续正常处理并添加CORS头
@@ -68,13 +77,13 @@ export function middleware(request: NextRequest) {
     response.headers.set(key, value)
   })
   
-  console.log('[Middleware] Added CORS headers to response')
+  console.log('[CORS Middleware] Added CORS headers to response')
   return response
 }
 
 // 配置中间件匹配路径
 export const config = {
   matcher: [
-    '/api/(.*)',  // 使用正则表达式匹配所有API路由
+    '/api/:path*'  // 匹配所有API路由的标准Next.js语法
   ]
 }

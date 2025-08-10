@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/store/authStore'
+import { useChatStore } from '@/store/chatStore'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
@@ -31,6 +32,11 @@ export const useAuth = () => {
   })
 
   const logoutHandler = () => {
+    // 清空聊天数据
+    const { clearUserData } = useChatStore.getState()
+    clearUserData()
+    
+    // 执行登出
     logout()
     toast.success('已退出登录')
     navigate('/login')
