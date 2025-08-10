@@ -34,12 +34,10 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response: AxiosResponse) => response,
       (error) => {
-        if (error.response?.status === 401) {
-          localStorage.removeItem('token')
-          window.location.href = '/login'
-        } else if (error.response?.status >= 500) {
+        if (error.response?.status >= 500) {
           toast.error('服务器错误，请稍后重试')
         }
+        // 401错误让调用方处理，不在这里直接重定向
         return Promise.reject(error)
       }
     )

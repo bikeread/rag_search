@@ -19,7 +19,7 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       token: null,
-      isLoading: false,
+      isLoading: true,
       isAuthenticated: false,
 
       login: async (email: string, password: string) => {
@@ -62,6 +62,7 @@ export const useAuthStore = create<AuthState>()(
       },
 
       loadUser: async () => {
+        set({ isLoading: true })
         const token = localStorage.getItem('token')
         if (token) {
           try {
@@ -70,16 +71,31 @@ export const useAuthStore = create<AuthState>()(
               user,
               token,
               isAuthenticated: true,
+              isLoading: false,
             })
           } catch {
-            get().logout()
+            // 不要调用logout()，因为它会清空localStorage
+            // 只清除当前会话的认证状态
+            localStorage.removeItem('token')
+            set({
+              user: null,
+              token: null,
+              isAuthenticated: false,
+              isLoading: false,
+            })
           }
+        } else {
+          set({ isLoading: false })
         }
       },
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ token: state.token }),
+      partialize: (state) => ({ 
+        token: state.token, 
+        user: state.user, 
+        isAuthenticated: state.isAuthenticated 
+      }),
     }
   )
 )

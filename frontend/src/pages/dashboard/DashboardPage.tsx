@@ -1,5 +1,6 @@
 import React from 'react'
 import { Row, Col, Card, Statistic, List, Avatar } from 'antd'
+import { Link } from 'react-router-dom'
 import { 
   FileTextOutlined, 
   MessageOutlined, 
@@ -13,25 +14,31 @@ export const DashboardPage: React.FC = () => {
   const { data: documentsData } = useDocuments({ limit: 5 })
   const { data: queryData } = useQueryHistory({ limit: 5 })
 
+  // 计算统计数据
+  const totalDocuments = documentsData?.pagination?.total || 0
+  const todayQueries = queryData?.pagination?.total || 0
+  const processingDocuments = documentsData?.data?.filter(doc => doc.status === 'PROCESSING').length || 0
+  const completionRate = totalDocuments > 0 ? Math.round((totalDocuments - processingDocuments) / totalDocuments * 100) : 0
+
   const stats = [
     {
       title: '总文档数',
-      value: documentsData?.pagination.total || 0,
+      value: totalDocuments,
       icon: <FileTextOutlined className="text-blue-500" />,
     },
     {
       title: '今日查询',
-      value: 23,
+      value: todayQueries,
       icon: <MessageOutlined className="text-green-500" />,
     },
     {
       title: '处理中文档',
-      value: 2,
+      value: processingDocuments,
       icon: <ClockCircleOutlined className="text-orange-500" />,
     },
     {
       title: '完成率',
-      value: 95,
+      value: completionRate,
       suffix: '%',
       icon: <CheckCircleOutlined className="text-purple-500" />,
     },
@@ -60,7 +67,10 @@ export const DashboardPage: React.FC = () => {
       <Row gutter={[16, 16]}>
         {/* 最近文档 */}
         <Col xs={24} lg={12}>
-          <Card title="最近上传" extra={<a href="/documents">查看全部</a>}>
+          <Card 
+            title="最近上传" 
+            extra={<Link to="/documents">查看全部</Link>}
+          >
             <List
               itemLayout="horizontal"
               dataSource={documentsData?.data || []}
@@ -79,7 +89,10 @@ export const DashboardPage: React.FC = () => {
 
         {/* 最近查询 */}
         <Col xs={24} lg={12}>
-          <Card title="最近查询" extra={<a href="/chat">开始对话</a>}>
+          <Card 
+            title="最近查询" 
+            extra={<Link to="/chat">开始对话</Link>}
+          >
             <List
               itemLayout="horizontal"
               dataSource={queryData?.data || []}
@@ -87,7 +100,7 @@ export const DashboardPage: React.FC = () => {
                 <List.Item>
                   <List.Item.Meta
                     avatar={<Avatar icon={<MessageOutlined />} />}
-                    title={item.text.substring(0, 30) + '...'}
+                    title={item.text ? (item.text.length > 30 ? item.text.substring(0, 30) + '...' : item.text) : '查询内容'}
                     description={new Date(item.createdAt).toLocaleString()}
                   />
                 </List.Item>
