@@ -96,3 +96,5 @@ test-results/
 *.pem
 config/local.yml
 secrets/
+CLAUDE.md
+.claude

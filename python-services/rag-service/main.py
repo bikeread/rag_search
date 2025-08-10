@@ -47,7 +47,7 @@ class OllamaClient:
     
     def __init__(self, base_url: str = "http://ollama:11434"):
         self.base_url = base_url
-        self.model = "llama3.2:latest"  # 使用轻量级模型
+        self.model = "llama3.2:1b"  # 使用轻量级模型
         
     async def generate_answer(self, context: str, query: str) -> str:
         """基于上下文生成回答"""

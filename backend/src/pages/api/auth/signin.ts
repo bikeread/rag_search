@@ -1,13 +1,13 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { getCorsHeaders } from '@/lib/cors'
 
-const registerSchema = z.object({
+const signinSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(8).max(128),
-  name: z.string().min(1).max(100).optional(),
+  password: z.string().min(1),
 })
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -34,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const validation = registerSchema.safeParse(req.body)
+    const validation = signinSchema.safeParse(req.body)
     
     if (!validation.success) {
       return res.status(400).json({
@@ -43,40 +43,47 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     }
 
-    const { email, password, name } = validation.data
+    const { email, password } = validation.data
 
-    // 检查用户是否已存在
-    const existingUser = await prisma.user.findUnique({
+    // Find user by email
+    const user = await prisma.user.findUnique({
       where: { email }
     })
 
-    if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' })
+    if (!user || !user.password) {
+      return res.status(401).json({ error: 'Invalid credentials' })
     }
 
-    // 加密密码
-    const hashedPassword = await bcrypt.hash(password, 12)
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.password)
 
-    // 创建用户
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name,
-      }
-    })
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid credentials' })
+    }
 
-    res.status(201).json({
-      message: 'User created successfully',
+    // Generate JWT token
+    const token = jwt.sign(
+      { 
+        userId: user.id, 
+        email: user.email,
+        role: user.role 
+      },
+      process.env.JWT_SECRET || 'fallback-secret-key',
+      { expiresIn: '7d' }
+    )
+
+    res.status(200).json({
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
-      }
+        role: user.role,
+      },
+      token
     })
 
   } catch (error) {
-    console.error('Registration error:', error)
-    res.status(500).json({ error: 'Registration failed' })
+    console.error('Signin error:', error)
+    res.status(500).json({ error: 'Signin failed' })
   }
 }

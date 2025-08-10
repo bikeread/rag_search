@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 自定义样式 */
+.ant-layout-sider {
+  background: #fff !important;
+}
+
+.ant-layout-header {
+  background: #fff !important;
+}
+
+/* 聊天界面样式 */
+.chat-container {
+  height: calc(100vh - 200px);
+}
+
+/* 上传组件样式 */
+.ant-upload-drag {
+  background-color: #fafafa !important;
+}
+
+/* 响应式表格 */
+@media (max-width: 768px) {
+  .ant-table {
+    font-size: 12px;
+  }
+}

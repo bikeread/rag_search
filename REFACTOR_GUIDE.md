@@ -1001,47 +1001,9 @@ const e2eTestFlow = {
     // 验证返回结果格式
     // 验证响应时间 < 3秒
     // 验证缓存机制生效
-  },
-  
-  "3. 并发性能测试": async () => {
-    // 模拟10个并发上传
-    // 模拟50个并发查询
-    // 验证系统稳定性
   }
 };
 ```
-
-#### 5.2 性能监控配置
-
-```typescript
-// backend/src/middleware/monitoring.ts
-import { NextApiRequest, NextApiResponse } from 'next';
-import { performance } from 'perf_hooks';
-
-export const monitoringMiddleware = (handler: any) => {
-  return async (req: NextApiRequest, res: NextApiResponse) => {
-    const startTime = performance.now();
-    
-    // 记录请求
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    
-    try {
-      await handler(req, res);
-      
-      const duration = performance.now() - startTime;
-      console.log(`Request completed in ${duration.toFixed(2)}ms`);
-      
-      // TODO: 发送到监控系统（预留接口）
-      
-    } catch (error) {
-      const duration = performance.now() - startTime;
-      console.error(`Request failed in ${duration.toFixed(2)}ms:`, error);
-      throw error;
-    }
-  };
-};
-```
-
 ## 现有代码迁移映射
 
 ### 保留的核心代码

@@ -1,5 +1,8 @@
 FROM node:18-alpine
 
+# 安装OpenSSL和其他必要的库
+RUN apk update && apk add --no-cache openssl libc6-compat
+
 WORKDIR /app
 
 # Copy package files
@@ -12,7 +15,7 @@ RUN npm install
 COPY . .
 
 # Generate Prisma client
-RUN npx prisma generate
+RUN rm -rf node_modules/.prisma && npx prisma generate
 
 # Expose port
 EXPOSE 3000

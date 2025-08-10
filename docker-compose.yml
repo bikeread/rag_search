@@ -39,6 +39,9 @@ services:
       - redis
       - rabbitmq
       - milvus
+      - document-processor
+      - vector-service
+      - rag-service
     volumes:
       - ./backend:/app
       - /app/node_modules

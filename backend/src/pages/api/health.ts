@@ -2,8 +2,27 @@ import { NextApiRequest, NextApiResponse } from 'next'
 import { prisma } from '@/lib/prisma'
 import { redis } from '@/lib/redis'
 import { documentProcessor, vectorService, ragService } from '@/services/pythonServices'
+import { getCorsHeaders } from '@/lib/cors'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const origin = req.headers.origin
+  
+  // 处理OPTIONS预检请求
+  if (req.method === 'OPTIONS') {
+    const corsHeaders = getCorsHeaders(origin)
+    Object.entries(corsHeaders).forEach(([key, value]) => {
+      res.setHeader(key, value)
+    })
+    res.status(200).end()
+    return
+  }
+
+  // 为所有请求添加CORS头
+  const corsHeaders = getCorsHeaders(origin)
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    res.setHeader(key, value)
+  })
+
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
