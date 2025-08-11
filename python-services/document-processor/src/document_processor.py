@@ -102,6 +102,8 @@ class ModernDocumentProcessor:
             'application/msword': DocumentType.DOCX,
             'text/plain': DocumentType.TXT,
             'text/markdown': DocumentType.TXT,
+            'text/x-markdown': DocumentType.TXT,  # 另一种Markdown MIME类型
+            'application/octet-stream': DocumentType.TXT,  # 通用二进制类型，通过文件扩展名判断
             'text/html': DocumentType.HTML,
             'application/vnd.ms-excel': DocumentType.EXCEL,
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': DocumentType.EXCEL,

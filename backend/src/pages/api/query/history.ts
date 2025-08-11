@@ -13,8 +13,9 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
 
     const { page = '1', limit = '20', status } = req.query
 
-    const pageNum = parseInt(page as string)
-    const limitNum = parseInt(limit as string)
+    // 参数验证和默认值处理
+    const pageNum = Math.max(1, parseInt(page as string) || 1)
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit as string) || 20)) // 限制最大100条
     const offset = (pageNum - 1) * limitNum
 
     const where: any = {

@@ -3,59 +3,101 @@ import { prisma } from '@/lib/prisma'
 import { CacheService } from '@/lib/redis'
 import { withCorsAndAuth } from '@/lib/cors'
 import { AuthenticatedRequest } from '@/lib/jwtAuth'
+import { withParamValidation, globalErrorHandler, ApiError } from '@/lib/middleware'
+import { deleteParamSchema } from '@/lib/validation'
+import { withTransaction } from '@/lib/transaction'
+import { vectorService } from '@/services/pythonServices'
 
-async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
+async function handler(
+  req: AuthenticatedRequest & { validatedQuery: { id: string } }, 
+  res: NextApiResponse
+) {
   if (req.method !== 'DELETE') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
+    const { id } = req.validatedQuery
     const userId = req.user.id
-
-    const { id } = req.query
-
-    if (!id || typeof id !== 'string') {
-      return res.status(400).json({ error: 'Invalid document ID' })
-    }
-
-    // 检查文档是否存在且属于当前用户
-    const document = await prisma.document.findFirst({
-      where: {
-        id,
-        uploadedBy: userId,
+    
+    const result = await deleteDocumentTransaction(id, userId)
+    
+    // 清理缓存
+    await clearUserCache(userId)
+    
+    res.status(200).json({
+      success: true,
+      message: 'Document deleted successfully',
+      data: {
+        documentId: id,
+        deletedAt: result.updatedAt,
       }
     })
+    
+  } catch (error) {
+    globalErrorHandler(error as Error, req, res)
+  }
+}
 
+// 文档删除事务
+export const deleteDocumentTransaction = async (documentId: string, userId: string) => {
+  return withTransaction(async (tx) => {
+    // 1. 验证文档所有权
+    const document = await tx.document.findFirst({
+      where: { 
+        id: documentId, 
+        uploadedBy: userId, 
+        NOT: { status: 'DELETED' } 
+      }
+    })
+    
     if (!document) {
-      return res.status(404).json({ error: 'Document not found' })
+      throw new ApiError(404, 'Document not found')
     }
-
-    // 软删除：标记为已删除状态
-    await prisma.document.update({
-      where: { id },
-      data: {
+    
+    // 2. 删除向量数据库中的相关向量
+    try {
+      console.log(`[${new Date().toISOString()}] 开始删除文档 ${documentId} 的向量数据`)
+      const vectorResult = await vectorService.deleteDocumentVectors(documentId)
+      console.log(`[${new Date().toISOString()}] 向量删除结果:`, vectorResult)
+    } catch (vectorError) {
+      console.warn(`[${new Date().toISOString()}] 向量删除失败，继续执行文档删除:`, vectorError)
+      // 不阻止文档删除流程，允许降级处理
+    }
+    
+    // 3. 软删除文档
+    const updatedDoc = await tx.document.update({
+      where: { id: documentId },
+      data: { 
         status: 'DELETED',
         updatedAt: new Date(),
       }
     })
+    
+    return updatedDoc
+  })
+}
 
-    // 清除相关缓存
-    // 注意：这里需要实现模式匹配删除，简化处理可以清除用户所有文档缓存
-    try {
-      await CacheService.del(`documents:${userId}`)
-    } catch (cacheError) {
-      console.warn('Failed to clear cache:', cacheError)
+// 清理用户缓存
+async function clearUserCache(userId: string) {
+  try {
+    const pattern = `documents:*:${userId}:*`
+    const keys = await CacheService.keys ? await CacheService.keys(pattern) : []
+    if (keys.length > 0) {
+      await CacheService.del(keys)
     }
-
-    res.status(200).json({
-      message: 'Document deleted successfully',
-      documentId: id
-    })
-
   } catch (error) {
-    console.error('Delete document error:', error)
-    res.status(500).json({ error: 'Failed to delete document' })
+    console.warn('Cache clear failed:', error)
   }
 }
 
-export default withCorsAndAuth(handler)
+// 参数预处理
+function preprocessDeleteParams(query: any) {
+  return {
+    id: query.id as string
+  }
+}
+
+export default withCorsAndAuth(
+  withParamValidation(deleteParamSchema, handler)
+)

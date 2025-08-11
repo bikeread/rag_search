@@ -41,43 +41,69 @@ class CPUVectorizer:
     """CPU友好的轻量级向量化器，适用于AMD处理器"""
     
     def __init__(self):
-        # 使用TF-IDF作为基础向量化方法，轻量且高效
+        # 使用TF-IDF作为基础向量化方法，适配小数据集优化
         self.tfidf = TfidfVectorizer(
             max_features=384,  # 固定维度，便于存储
             stop_words=None,  # 保留所有词，包括中文
-            ngram_range=(1, 2),  # 包含单词和双词
+            ngram_range=(1, 1),  # 只使用单词，降低复杂性
             min_df=1,         # 最少出现1次
-            max_df=1.0,       # 允许在所有文档中出现
+            max_df=1.0,       # 允许所有词，避免小数据集max_df<min_df问题
             token_pattern=r'[^\s]+',  # 支持中文分词
-            lowercase=False   # 保持原始大小写
+            lowercase=True,   # 统一转为小写提高匹配率
+            sublinear_tf=True,  # 使用对数TF，减少高频词影响
+            smooth_idf=True,   # 平滑IDF，避免零除错误
+            norm='l2'         # L2归一化
         )
         self.is_fitted = False
         self.target_dim = 384  # 目标向量维度
+        self.vocabulary_base = []  # 基础词汇表
         
     def vectorize_texts(self, texts: List[str]) -> np.ndarray:
         """将文本转换为向量"""
+        if not texts:
+            return np.zeros((0, self.target_dim))
+            
+        # 预处理文本，确保不为空
+        processed_texts = []
+        for text in texts:
+            if not text or not text.strip():
+                processed_texts.append("empty_text_placeholder")
+            else:
+                processed_texts.append(text.strip())
+        
         if not self.is_fitted:
             # 首次使用时拟合模型
-            vectors = self.tfidf.fit_transform(texts)
+            vectors = self.tfidf.fit_transform(processed_texts)
             self.is_fitted = True
+            logger.info(f"TF-IDF向量化器已拟合，词汇表大小: {len(self.tfidf.vocabulary_)}")
         else:
-            vectors = self.tfidf.transform(texts)
+            vectors = self.tfidf.transform(processed_texts)
         
         # 转换为密集数组
         dense_vectors = vectors.toarray()
+        logger.info(f"原始向量维度: {dense_vectors.shape}, 非零元素: {np.count_nonzero(dense_vectors)}")
         
         # 确保向量维度为384
         current_dim = dense_vectors.shape[1]
         if current_dim < self.target_dim:
-            # 如果维度不足，用零填充
-            padding = np.zeros((dense_vectors.shape[0], self.target_dim - current_dim))
+            # 如果维度不足，用小的随机数填充而不是零
+            padding = np.random.normal(0, 0.01, (dense_vectors.shape[0], self.target_dim - current_dim))
             dense_vectors = np.hstack([dense_vectors, padding])
         elif current_dim > self.target_dim:
             # 如果维度过多，截取前384维
             dense_vectors = dense_vectors[:, :self.target_dim]
         
+        # 防止全零向量
+        for i, vec in enumerate(dense_vectors):
+            if np.allclose(vec, 0):
+                # 为全零向量添加小的随机扰动
+                dense_vectors[i] = np.random.normal(0, 0.01, self.target_dim)
+                logger.warning(f"向量 {i} 为全零，已添加随机扰动")
+        
         # 归一化
         normalized_vectors = normalize(dense_vectors, norm='l2')
+        
+        logger.info(f"最终向量维度: {normalized_vectors.shape}, 向量范数: {[f'{np.linalg.norm(v):.3f}' for v in normalized_vectors[:3]]}")
         
         return normalized_vectors
 
@@ -383,6 +409,41 @@ async def store_vectors(request: StoreVectorRequest):
     except Exception as e:
         logger.error(f"存储向量失败: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Store vectors failed: {str(e)}")
+
+@app.delete("/document/{document_id}")
+async def delete_document_vectors(document_id: str):
+    """删除指定文档的所有向量"""
+    try:
+        if not document_id:
+            raise HTTPException(status_code=400, detail="Document ID is required")
+        
+        if not milvus_client or not milvus_client.is_connected:
+            logger.warning("Milvus未连接，跳过向量删除")
+            return {
+                "status": "skipped",
+                "message": "Milvus not connected, vector deletion skipped",
+                "document_id": document_id
+            }
+        
+        logger.info(f"删除文档 {document_id} 的所有向量")
+        
+        # 执行删除
+        success = await milvus_client.delete_document_vectors(document_id)
+        
+        if success:
+            logger.info(f"成功删除文档 {document_id} 的向量")
+            return {
+                "status": "completed",
+                "message": "Document vectors deleted successfully",
+                "document_id": document_id
+            }
+        else:
+            logger.error(f"删除文档 {document_id} 的向量失败")
+            raise HTTPException(status_code=500, detail="Failed to delete document vectors")
+        
+    except Exception as e:
+        logger.error(f"删除文档向量失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Delete document vectors failed: {str(e)}")
 
 if __name__ == "__main__":
     logger.info("启动向量化服务...")

@@ -21,7 +21,22 @@ class ApiClient {
     // 请求拦截器
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('token')
+        // 尝试从两个位置获取token
+        let token = localStorage.getItem('token')
+        
+        // 如果没有找到token，尝试从auth-storage获取
+        if (!token) {
+          try {
+            const authStorage = localStorage.getItem('auth-storage')
+            if (authStorage) {
+              const parsed = JSON.parse(authStorage)
+              token = parsed.state?.token
+            }
+          } catch (e) {
+            // 忽略解析错误
+          }
+        }
+        
         if (token) {
           config.headers.Authorization = `Bearer ${token}`
         }

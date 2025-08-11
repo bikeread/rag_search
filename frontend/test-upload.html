@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test MD Upload</title>
+</head>
+<body>
+    <h1>测试.md文件上传</h1>
+    <input type="file" id="fileInput" accept=".md" />
+    <button onclick="testUpload()">测试上传</button>
+    <div id="result"></div>
+    
+    <script>
+    function testUpload() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+        const resultDiv = document.getElementById('result');
+        
+        if (!file) {
+            resultDiv.innerHTML = '<p style="color:red;">请选择一个.md文件</p>';
+            return;
+        }
+        
+        resultDiv.innerHTML = `
+            <h3>文件信息:</h3>
+            <p>文件名: ${file.name}</p>
+            <p>文件大小: ${file.size} bytes</p>
+            <p>MIME类型: ${file.type}</p>
+            <p>最后修改: ${new Date(file.lastModified).toLocaleString()}</p>
+        `;
+        
+        // 检查前端验证逻辑
+        const allowedTypes = [
+            'application/pdf',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/msword',
+            'text/plain',
+            'text/markdown',
+            'text/x-markdown'
+        ];
+        
+        let passed = false;
+        if (allowedTypes.includes(file.type)) {
+            resultDiv.innerHTML += '<p style="color:green;">✅ MIME类型检查通过</p>';
+            passed = true;
+        } else if (file.type === 'application/octet-stream' && file.name.toLowerCase().endsWith('.md')) {
+            resultDiv.innerHTML += '<p style="color:green;">✅ .md文件特殊处理通过</p>';
+            passed = true;
+        } else {
+            resultDiv.innerHTML += '<p style="color:red;">❌ 文件类型验证失败</p>';
+        }
+        
+        if (passed) {
+            resultDiv.innerHTML += '<p style="color:blue;">🚀 准备调用后端API...</p>';
+            
+            // 模拟后端调用
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            fetch('http://localhost:3001/api/documents/upload', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbWU1OHhpbnUwMDAwa2NhMWZjdGxpaXNqIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NTQ5MDE1OTMsImV4cCI6MTc1NTUwNjM5M30.OhiMO9yGCafX4Dz-yPjeIeEn4_U0FUF3bX10Ra9BgTQ'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    resultDiv.innerHTML += '<p style="color:green;">✅ 上传成功！</p>';
+                    resultDiv.innerHTML += '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                } else {
+                    resultDiv.innerHTML += '<p style="color:red;">❌ 上传失败：' + (data.error || '未知错误') + '</p>';
+                }
+            })
+            .catch(error => {
+                resultDiv.innerHTML += '<p style="color:red;">❌ 网络错误：' + error.message + '</p>';
+            });
+        }
+    }
+    </script>
+</body>
+</html>

@@ -124,9 +124,9 @@ class MilvusClient:
                 description="原始文本内容"
             ),
             FieldSchema(
-                name="embedding",
+                name="vector",
                 dtype=DataType.FLOAT_VECTOR,
-                dim=settings.embedding_dim,
+                dim=384,
                 description="文本向量"
             ),
             FieldSchema(
@@ -175,7 +175,7 @@ class MilvusClient:
             
             logger.info("Creating vector index...")
             self.collection.create_index(
-                field_name="embedding",
+                field_name="vector",
                 index_params=index_params
             )
             
@@ -224,7 +224,7 @@ class MilvusClient:
             entities = [
                 vector_ids,  # id字段
                 texts,       # text字段
-                vectors,     # embedding字段
+                vectors,     # vector字段
                 [document_id] * len(texts),  # document_id字段
                 list(range(len(texts))),     # chunk_index字段
                 [current_timestamp] * len(texts)  # created_at字段
@@ -285,7 +285,7 @@ class MilvusClient:
             # 执行搜索
             search_results = self.collection.search(
                 data=[query_vector],
-                anns_field="embedding",
+                anns_field="vector",
                 param=search_params,
                 limit=top_k,
                 expr=expr,

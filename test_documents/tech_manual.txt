@@ -1,0 +1,89 @@
+RAG系统技术手册
+
+第一章：系统架构
+RAG（Retrieval-Augmented Generation）系统采用微服务架构，包含以下核心组件：
+
+1. Document Processor Service
+- 负责多格式文档解析
+- 支持PDF、Word、Excel、Markdown等格式
+- 实现智能文本分块
+- 端口：8001
+
+2. Vector Service
+- 使用TF-IDF算法进行文本向量化
+- 集成Milvus向量数据库
+- 提供语义相似性搜索
+- 端口：8002
+
+3. RAG Service
+- 整合检索和生成功能
+- 使用Ollama LLM模型
+- 提供智能问答服务
+- 端口：8003
+
+第二章：部署配置
+系统支持Docker容器化部署，依赖以下基础设施：
+
+数据存储：
+- PostgreSQL：用户数据和元信息存储
+- Redis：缓存和会话存储
+- Milvus：向量数据存储
+
+消息队列：
+- RabbitMQ：异步任务处理
+
+人工智能：
+- Ollama：本地LLM服务
+- 模型：llama3.2:1b
+
+第三章：API接口
+系统提供RESTful API接口，支持以下操作：
+
+文档管理：
+- POST /api/documents/upload：上传文档
+- GET /api/documents/list：获取文档列表
+- DELETE /api/documents/{id}：删除文档
+
+查询服务：
+- POST /api/query：执行RAG查询
+- GET /api/query/history：获取查询历史
+
+认证授权：
+- POST /api/auth/signin：用户登录
+- GET /api/auth/user：获取用户信息
+
+第四章：性能优化
+系统性能优化建议：
+
+向量化优化：
+- 调整TF-IDF特征数量
+- 优化分块大小和重叠
+- 实现批量处理
+
+搜索优化：
+- 使用混合检索策略
+- 实现结果缓存
+- 调整相似度阈值
+
+生成优化：
+- 优化prompt模板
+- 调整生成参数
+- 实现流式输出
+
+第五章：监控运维
+系统监控包括：
+
+服务监控：
+- 健康检查端点
+- 性能指标收集
+- 日志聚合分析
+
+数据监控：
+- 向量数据库状态
+- 查询响应时间
+- 错误率统计
+
+告警设置：
+- 服务异常告警
+- 性能阈值告警
+- 存储容量告警

@@ -36,11 +36,24 @@ def validate_document(filename: str, content: bytes, mime_type: str) -> bool:
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'application/msword',
         'text/plain',
-        'text/markdown'
+        'text/markdown',
+        'text/x-markdown',
+        'application/octet-stream'  # 通用二进制类型，后续通过文件扩展名判断
     ]
     
-    if mime_type not in allowed_types:
-        raise DocumentProcessingError(f"不支持的文件类型: {mime_type}")
+    # 检查MIME类型
+    if mime_type in allowed_types:
+        return True
+    
+    # 对于application/octet-stream，基于文件扩展名判断
+    if mime_type == 'application/octet-stream' and filename:
+        allowed_extensions = ['.md', '.txt', '.pdf', '.docx', '.doc']
+        file_ext = filename.lower().split('.')[-1] if '.' in filename else ''
+        if f'.{file_ext}' in allowed_extensions:
+            return True
+    
+    # 如果都不匹配，抛出错误
+    raise DocumentProcessingError(f"不支持的文件类型: {mime_type}")
     
     # 验证文件内容不为空
     if len(content) == 0:

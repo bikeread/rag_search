@@ -17,6 +17,7 @@ import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { ChatPage } from '@/pages/chat/ChatPage'
 import { DocumentListPage } from '@/pages/documents/DocumentListPage'
+import { ProfilePage } from '@/pages/profile'
 
 import '@/styles/global.css'
 
@@ -60,6 +61,7 @@ const App: React.FC = () => {
               <Route path="dashboard" element={<DashboardPage />} />
               <Route path="chat" element={<ChatPage />} />
               <Route path="documents" element={<DocumentListPage />} />
+              <Route path="profile" element={<ProfilePage />} />
             </Route>
 
             {/* 默认路由重定向 */}

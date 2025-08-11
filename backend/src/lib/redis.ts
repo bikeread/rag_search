@@ -48,4 +48,25 @@ export class CacheService {
       return false
     }
   }
+
+  static async keys(pattern: string): Promise<string[]> {
+    try {
+      return await redis.keys(pattern)
+    } catch (error) {
+      console.error('Cache keys error:', error)
+      return []
+    }
+  }
+
+  static async delByPattern(pattern: string): Promise<void> {
+    try {
+      const keys = await CacheService.keys(pattern)
+      if (keys.length > 0) {
+        await redis.del(...keys)
+        console.log(`Cleared ${keys.length} cache keys matching pattern: ${pattern}`)
+      }
+    } catch (error) {
+      console.error('Cache delete by pattern error:', error)
+    }
+  }
 }

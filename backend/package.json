@@ -18,6 +18,10 @@
     "zod": "^4.0.16"
   },
   "devDependencies": {
+    "@playwright/test": "^1.54.2",
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
     "@types/amqplib": "^0.10.5",
     "@types/bcryptjs": "^2.4.6",
     "@types/formidable": "^3.4.5",
@@ -28,9 +32,12 @@
     "@types/react-dom": "^18",
     "eslint": "^8",
     "eslint-config-next": "14.2.5",
+    "node-mocks-http": "^1.17.2",
     "nodemon": "^3.1.10",
+    "supertest": "^7.1.4",
     "tsx": "^4.20.3",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   },
   "name": "rag-backend",
   "private": true,
@@ -41,7 +48,11 @@
     "db:push": "prisma db push",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start -p 3001"
+    "start": "next start -p 3001",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:integration": "vitest run src/tests/integration"
   },
   "version": "0.1.0"
 }

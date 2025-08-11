@@ -3,78 +3,108 @@ import { prisma } from '@/lib/prisma'
 import { documentProcessor } from '@/services/pythonServices'
 import { withCorsAndAuth } from '@/lib/cors'
 import { AuthenticatedRequest } from '@/lib/jwtAuth'
+import { withParamValidation, globalErrorHandler, ApiError } from '@/lib/middleware'
+import { statusParamSchema } from '@/lib/validation'
 
-async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
+async function handler(
+  req: AuthenticatedRequest & { validatedQuery: { id: string } }, 
+  res: NextApiResponse
+) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
+    const { id } = req.validatedQuery
     const userId = req.user.id
-
-    const { id } = req.query
-
-    if (!id || typeof id !== 'string') {
-      return res.status(400).json({ error: 'Invalid document ID' })
-    }
-
-    // 从数据库获取文档信息
-    const document = await prisma.document.findFirst({
-      where: {
-        id,
-        uploadedBy: userId, // 确保用户只能查看自己的文档
-      },
-      include: {
-        chunks: {
-          select: {
-            id: true,
-            chunkIndex: true,
-            createdAt: true,
-          },
-          orderBy: {
-            chunkIndex: 'asc'
-          }
-        }
-      }
-    })
-
+    
+    // 获取数据库状态
+    const document = await getDocumentWithChunks(id, userId)
+    
     if (!document) {
-      return res.status(404).json({ error: 'Document not found' })
+      return res.status(404).json({
+        success: false,
+        error: 'Document not found'
+      })
     }
-
-    // 如果文档还在处理中，尝试从 Python 服务获取最新状态
+    
+    // 处理中文档获取Python服务状态
     let processingStatus = null
     if (document.status === 'PROCESSING') {
-      try {
-        processingStatus = await documentProcessor.getProcessingStatus(document.id)
-      } catch (error) {
-        console.warn('Failed to get processing status from Python service:', error)
-      }
+      processingStatus = await documentProcessor
+        .getProcessingStatus(id)
+        .catch(error => {
+          console.warn('Python service status unavailable:', error)
+          return null
+        })
     }
-
+    
     res.status(200).json({
-      document: {
-        id: document.id,
-        filename: document.filename,
-        originalName: document.originalName,
-        mimeType: document.mimeType,
-        size: document.size,
-        status: document.status,
-        errorMessage: document.errorMessage,
-        chunksCount: document.chunks.length,
-        createdAt: document.createdAt,
-        updatedAt: document.updatedAt,
-        processingStartedAt: document.processingStartedAt,
-        processingCompletedAt: document.processingCompletedAt,
-      },
-      processingStatus,
-      chunks: document.chunks
+      success: true,
+      data: {
+        document: formatDocumentResponse(document),
+        processingStatus,
+        chunks: formatChunksResponse(document.chunks),
+      }
     })
-
+    
   } catch (error) {
-    console.error('Status check error:', error)
-    res.status(500).json({ error: 'Failed to get document status' })
+    globalErrorHandler(error as Error, req, res)
   }
 }
 
-export default withCorsAndAuth(handler)
+// 获取文档及其块信息
+async function getDocumentWithChunks(documentId: string, userId: string) {
+  return await prisma.document.findFirst({
+    where: { 
+      id: documentId, 
+      uploadedBy: userId,
+      NOT: { status: 'DELETED' }
+    },
+    include: {
+      chunks: {
+        select: {
+          id: true,
+          chunkIndex: true,
+          content: true,
+          metadata: true,
+          createdAt: true,
+        },
+        orderBy: { chunkIndex: 'asc' },
+      },
+    },
+  })
+}
+
+// 格式化文档响应
+function formatDocumentResponse(doc: any) {
+  return {
+    id: doc.id,
+    filename: doc.filename,
+    originalName: doc.originalName,
+    mimeType: doc.mimeType,
+    size: doc.size,
+    status: doc.status,
+    chunksCount: doc.chunks?.length || 0,
+    createdAt: doc.createdAt.toISOString(),
+    updatedAt: doc.updatedAt.toISOString(),
+    processingStartedAt: doc.processingStartedAt?.toISOString(),
+    processingCompletedAt: doc.processingCompletedAt?.toISOString(),
+    errorMessage: doc.errorMessage,
+  }
+}
+
+// 格式化块响应
+function formatChunksResponse(chunks: any[]) {
+  return chunks.map(chunk => ({
+    id: chunk.id,
+    chunkIndex: chunk.chunkIndex,
+    content: chunk.content,
+    metadata: chunk.metadata,
+    createdAt: chunk.createdAt.toISOString(),
+  }))
+}
+
+export default withCorsAndAuth(
+  withParamValidation(statusParamSchema, handler)
+)

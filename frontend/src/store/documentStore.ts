@@ -24,8 +24,8 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   loadDocuments: async (params = {}) => {
     set({ isLoading: true })
     try {
-      const response = await documentService.getDocumentList(params)
-      set({ documents: response.data, isLoading: false })
+      const response = await documentService.getDocuments(params)
+      set({ documents: response.documents, isLoading: false })
     } catch (error) {
       set({ isLoading: false })
       throw error
@@ -35,7 +35,7 @@ export const useDocumentStore = create<DocumentState>((set, get) => ({
   uploadDocument: async (file: File) => {
     set({ isLoading: true, uploadProgress: 0 })
     try {
-      await documentService.uploadDocument({ file })
+      await documentService.uploadDocument(file)
       set({ isLoading: false, uploadProgress: 100 })
       // 重新加载文档列表
       get().loadDocuments()

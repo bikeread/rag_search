@@ -69,9 +69,11 @@ export class DocumentProcessorClient extends PythonServiceClient {
     super(SERVICE_URLS.DOCUMENT_PROCESSOR)
   }
 
-  async uploadDocument(file: Buffer, filename: string, documentId: string) {
+  async uploadDocument(file: Buffer, filename: string, documentId: string, mimeType?: string) {
     const formData = new FormData()
-    formData.append('file', new Blob([file]), filename)
+    // 根据文件扩展名推断MIME类型
+    const inferredMimeType = mimeType || this.inferMimeType(filename)
+    formData.append('file', new Blob([file], { type: inferredMimeType }), filename)
     formData.append('document_id', documentId)
 
     return this.post('/process-document', formData, {
@@ -91,6 +93,19 @@ export class DocumentProcessorClient extends PythonServiceClient {
 
   async healthCheck() {
     return this.get('/health')
+  }
+
+  // 根据文件扩展名推断MIME类型
+  private inferMimeType(filename: string): string {
+    const extension = filename.split('.').pop()?.toLowerCase()
+    const mimeTypes: Record<string, string> = {
+      'pdf': 'application/pdf',
+      'doc': 'application/msword',
+      'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'txt': 'text/plain',
+      'md': 'text/markdown',
+    }
+    return mimeTypes[extension || ''] || 'application/octet-stream'
   }
 }
 
@@ -120,6 +135,10 @@ export class VectorServiceClient extends PythonServiceClient {
       texts,
       metadata
     })
+  }
+
+  async deleteDocumentVectors(documentId: string) {
+    return this.delete(`/document/${documentId}`)
   }
 
   async healthCheck() {

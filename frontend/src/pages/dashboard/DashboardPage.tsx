@@ -17,7 +17,7 @@ export const DashboardPage: React.FC = () => {
   // 计算统计数据
   const totalDocuments = documentsData?.pagination?.total || 0
   const todayQueries = queryData?.pagination?.total || 0
-  const processingDocuments = documentsData?.data?.filter(doc => doc.status === 'PROCESSING').length || 0
+  const processingDocuments = documentsData?.documents?.filter(doc => doc.status === 'PROCESSING').length || 0
   const completionRate = totalDocuments > 0 ? Math.round((totalDocuments - processingDocuments) / totalDocuments * 100) : 0
 
   const stats = [
@@ -73,7 +73,7 @@ export const DashboardPage: React.FC = () => {
           >
             <List
               itemLayout="horizontal"
-              dataSource={documentsData?.data || []}
+              dataSource={documentsData?.documents || []}
               renderItem={(item) => (
                 <List.Item>
                   <List.Item.Meta
