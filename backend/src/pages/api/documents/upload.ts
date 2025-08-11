@@ -1,12 +1,12 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth/next'
 import formidable from 'formidable'
 import fs from 'fs/promises'
 import path from 'path'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { documentProcessor } from '@/services/pythonServices'
 import { uploadSchema } from '@/lib/validation'
+import { withCorsAndAuth } from '@/lib/cors'
+import { AuthenticatedRequest } from '@/lib/jwtAuth'
 
 export const config = {
   api: {
@@ -14,17 +14,13 @@ export const config = {
   },
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
-    // 验证用户认证
-    const session = await getServerSession(req, res, authOptions)
-    if (!session) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
+    const userId = req.user.id
 
     // 解析上传文件
     const form = formidable({
@@ -72,7 +68,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         mimeType: file.mimetype || 'application/octet-stream',
         size: file.size,
         status: 'PENDING',
-        uploadedBy: (session.user as any).id,
+        uploadedBy: userId,
         processingStartedAt: new Date(),
       }
     })
@@ -122,3 +118,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
   }
 }
+
+export default withCorsAndAuth(handler)

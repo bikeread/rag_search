@@ -63,8 +63,10 @@ export function getFrontendUrl(): string {
  * 用于包装API处理函数，自动处理CORS
  */
 import { NextApiRequest, NextApiResponse } from 'next'
+import { withJwtAuth, AuthenticatedRequest } from './jwtAuth'
 
 type ApiHandler = (req: NextApiRequest, res: NextApiResponse) => Promise<void> | void
+type AuthenticatedApiHandler = (req: AuthenticatedRequest, res: NextApiResponse) => Promise<void> | void
 
 export function withCors(handler: ApiHandler) {
   return async (req: NextApiRequest, res: NextApiResponse) => {
@@ -85,4 +87,12 @@ export function withCors(handler: ApiHandler) {
     // 调用原始处理函数
     return handler(req, res)
   }
+}
+
+/**
+ * 组合包装器：CORS + JWT认证
+ * 最常用的API包装器组合
+ */
+export function withCorsAndAuth(handler: AuthenticatedApiHandler) {
+  return withCors(withJwtAuth(handler))
 }

@@ -1,20 +1,15 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { CacheService } from '@/lib/redis'
-import { withCors } from '@/lib/cors'
+import { withCorsAndAuth } from '@/lib/cors'
+import { AuthenticatedRequest } from '@/lib/jwtAuth'
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
-    const session = await getServerSession(req, res, authOptions)
-    if (!session) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
 
     const { page = '1', limit = '10', status, search } = req.query
 
@@ -24,7 +19,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     // 构建查询条件
     const where: any = {
-      uploadedBy: (session.user as any).id,
+      uploadedBy: req.user.id,
     }
 
     if (status && typeof status === 'string') {
@@ -39,7 +34,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     }
 
     // 检查缓存
-    const cacheKey = `documents:${(session.user as any).id}:${pageNum}:${limitNum}:${status || 'all'}:${search || ''}`
+    const cacheKey = `documents:${req.user.id}:${pageNum}:${limitNum}:${status || 'all'}:${search || ''}`
     const cachedResult = await CacheService.get(cacheKey)
 
     if (cachedResult) {
@@ -101,4 +96,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withCors(handler)
+export default withCorsAndAuth(handler)

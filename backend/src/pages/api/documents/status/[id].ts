@@ -1,19 +1,16 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { documentProcessor } from '@/services/pythonServices'
+import { withCorsAndAuth } from '@/lib/cors'
+import { AuthenticatedRequest } from '@/lib/jwtAuth'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
-    const session = await getServerSession(req, res, authOptions)
-    if (!session) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
+    const userId = req.user.id
 
     const { id } = req.query
 
@@ -25,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const document = await prisma.document.findFirst({
       where: {
         id,
-        uploadedBy: (session.user as any).id, // 确保用户只能查看自己的文档
+        uploadedBy: userId, // 确保用户只能查看自己的文档
       },
       include: {
         chunks: {
@@ -79,3 +76,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(500).json({ error: 'Failed to get document status' })
   }
 }
+
+export default withCorsAndAuth(handler)

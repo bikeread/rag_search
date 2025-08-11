@@ -1,19 +1,16 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { CacheService } from '@/lib/redis'
+import { withCorsAndAuth } from '@/lib/cors'
+import { AuthenticatedRequest } from '@/lib/jwtAuth'
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method !== 'DELETE') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
-    const session = await getServerSession(req, res, authOptions)
-    if (!session) {
-      return res.status(401).json({ error: 'Unauthorized' })
-    }
+    const userId = req.user.id
 
     const { id } = req.query
 
@@ -25,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const document = await prisma.document.findFirst({
       where: {
         id,
-        uploadedBy: (session.user as any).id,
+        uploadedBy: userId,
       }
     })
 
@@ -45,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 清除相关缓存
     // 注意：这里需要实现模式匹配删除，简化处理可以清除用户所有文档缓存
     try {
-      await CacheService.del(`documents:${(session.user as any).id}`)
+      await CacheService.del(`documents:${userId}`)
     } catch (cacheError) {
       console.warn('Failed to clear cache:', cacheError)
     }
@@ -60,3 +57,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.status(500).json({ error: 'Failed to delete document' })
   }
 }
+
+export default withCorsAndAuth(handler)

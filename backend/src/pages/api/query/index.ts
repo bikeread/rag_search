@@ -1,28 +1,18 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import jwt from 'jsonwebtoken'
 import { prisma } from '@/lib/prisma'
 import { ragService } from '@/services/pythonServices'
 import { CacheService } from '@/lib/redis'
 import { querySchema } from '@/lib/validation'
-import { withCors } from '@/lib/cors'
+import { withCorsAndAuth } from '@/lib/cors'
+import { AuthenticatedRequest } from '@/lib/jwtAuth'
 
-async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
   try {
-    // JWT验证
-    const authorization = req.headers.authorization
-    if (!authorization || !authorization.startsWith('Bearer ')) {
-      return res.status(401).json({ error: 'No token provided' })
-    }
-
-    const token = authorization.substring(7)
-    const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key'
-    
-    const decoded = jwt.verify(token, JWT_SECRET) as any
-    const userId = decoded.userId
+    const userId = req.user.id
 
     // 验证请求数据
     const validation = querySchema.safeParse(req.body)
@@ -126,4 +116,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withCors(handler)
+export default withCorsAndAuth(handler)
