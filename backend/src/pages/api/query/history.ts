@@ -20,6 +20,9 @@ async function handler(req: AuthenticatedRequest, res: NextApiResponse) {
 
     const where: any = {
       userId: userId,
+      status: {
+        not: 'DELETED' // 排除已删除的记录
+      }
     }
 
     if (status && typeof status === 'string') {

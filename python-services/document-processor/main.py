@@ -10,7 +10,7 @@ import sys
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks, Depends
+from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks, Depends, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 import uvicorn
@@ -213,10 +213,10 @@ async def health_check():
 async def process_document(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
-    document_id: Optional[str] = None,
-    enable_chunking: bool = True,
-    chunk_size: int = 1000,
-    chunk_overlap: int = 200,
+    document_id: Optional[str] = Form(None),
+    enable_chunking: bool = Form(True),
+    chunk_size: int = Form(1000),
+    chunk_overlap: int = Form(200),
     rabbit_client: RabbitMQClient = Depends(get_rabbit_client)
 ):
     """

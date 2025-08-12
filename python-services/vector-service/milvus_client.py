@@ -108,7 +108,7 @@ class MilvusClient:
         Returns:
             Collection: 创建的集合对象
         """
-        # 定义字段Schema
+        # 定义字段Schema - 顺序必须与upsert_vectors中的entities顺序一致
         fields = [
             FieldSchema(
                 name="id", 
@@ -404,7 +404,6 @@ class MilvusClient:
             stats = {
                 "name": self.collection_name,
                 "num_entities": self.collection.num_entities,
-                "is_loaded": self.collection.is_loaded,
                 "has_index": self.collection.has_index()
             }
             
@@ -421,6 +420,36 @@ class MilvusClient:
         except Exception as e:
             logger.error(f"Failed to get collection stats: {str(e)}")
             return {"error": str(e)}
+    
+    async def reset_collection(self) -> bool:
+        """
+        重置集合 - 删除并重新创建
+        
+        Returns:
+            bool: 重置是否成功
+        """
+        try:
+            logger.info(f"Resetting collection {self.collection_name}")
+            
+            # 释放当前集合
+            if self.collection:
+                self.collection.release()
+                self.collection = None
+            
+            # 删除现有集合（如果存在）
+            if utility.has_collection(self.collection_name):
+                utility.drop_collection(self.collection_name)
+                logger.info(f"Dropped existing collection {self.collection_name}")
+            
+            # 重新创建集合
+            await self._initialize_collection()
+            
+            logger.info(f"Collection {self.collection_name} reset successfully")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to reset collection: {str(e)}")
+            return False
     
     async def close(self):
         """关闭连接"""

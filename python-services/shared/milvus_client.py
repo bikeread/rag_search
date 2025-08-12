@@ -412,6 +412,34 @@ class MilvusClient:
             logger.error(f"Failed to get collection stats: {str(e)}")
             return {"error": str(e)}
     
+    async def reset_collection(self) -> bool:
+        """重置集合 - 删除并重新创建"""
+        try:
+            logger.info(f"Resetting collection {self.collection_name}...")
+            
+            # 如果集合存在，先删除
+            if utility.has_collection(self.collection_name):
+                collection_to_drop = Collection(self.collection_name)
+                collection_to_drop.release()
+                utility.drop_collection(self.collection_name)
+                logger.info(f"Dropped existing collection {self.collection_name}")
+                
+            # 重新创建集合
+            self.collection = await self._create_collection()
+            
+            # 创建索引
+            await self._create_index()
+            
+            # 加载到内存
+            self.collection.load()
+            
+            logger.info(f"Collection {self.collection_name} reset successfully")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to reset collection: {str(e)}")
+            return False
+    
     async def close(self):
         """关闭连接"""
         try:

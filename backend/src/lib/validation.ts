@@ -1,4 +1,6 @@
 import { z } from 'zod'
+import Joi from 'joi'
+import { NextApiRequest, NextApiResponse } from 'next'
 
 export const uploadSchema = z.object({
   filename: z.string().min(1).max(255),
@@ -24,6 +26,28 @@ export const registerSchema = z.object({
   password: z.string().min(8).max(128),
   name: z.string().min(1).max(100).optional(),
 })
+
+// Joi验证模式（用于增强验证）
+export const joiSchemas = {
+  // 增强的密码验证
+  signup: Joi.object({
+    email: Joi.string().email().required(),
+    password: Joi.string()
+      .min(8)
+      .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+      .required()
+      .messages({
+        'string.min': 'Password must be at least 8 characters',
+        'string.pattern.base': 'Password must contain uppercase, lowercase, and number'
+      }),
+    name: Joi.string().min(2).max(100).optional()
+  }),
+  
+  signin: Joi.object({
+    email: Joi.string().email().required(),
+    password: Joi.string().min(6).required()
+  })
+}
 
 // 文档列表查询参数验证
 export const listQuerySchema = z.object({
@@ -54,6 +78,59 @@ export const enhancedUploadSchema = z.object({
     .max(50 * 1024 * 1024, '文件大小超过限制'),
   mimeType: z.string().min(1, 'MIME类型不能为空'),
 })
+
+// SQL注入防护 - 清理输入
+export function sanitizeInput(input: string): string {
+  return input
+    .replace(/[;'"\\]/g, '') // 移除SQL特殊字符
+    .replace(/--/g, '') // 移除SQL注释
+    .replace(/\/\*/g, '') // 移除多行注释开始
+    .replace(/\*\//g, '') // 移除多行注释结束
+    .trim()
+}
+
+// XSS防护 - HTML实体编码
+export function escapeHtml(text: string): string {
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+    '/': '&#x2F;'
+  }
+  return text.replace(/[&<>"'/]/g, (char) => map[char])
+}
+
+// 密码强度验证
+export function validatePasswordStrength(password: string): { strong: boolean; suggestions: string[] } {
+  const suggestions: string[] = []
+  
+  if (password.length < 8) {
+    suggestions.push('Password should be at least 8 characters long')
+  }
+  
+  if (!/[A-Z]/.test(password)) {
+    suggestions.push('Include at least one uppercase letter')
+  }
+  
+  if (!/[a-z]/.test(password)) {
+    suggestions.push('Include at least one lowercase letter')
+  }
+  
+  if (!/\d/.test(password)) {
+    suggestions.push('Include at least one number')
+  }
+  
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    suggestions.push('Include at least one special character')
+  }
+
+  return {
+    strong: suggestions.length === 0,
+    suggestions
+  }
+}
 
 // 文件类型验证函数（单独处理，支持.md文件的特殊情况）
 export function validateFileType(filename: string, mimeType: string): boolean {

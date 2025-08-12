@@ -9,21 +9,19 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String     @id @default(cuid())
+  email     String     @unique
   name      String?
-  password  String?  // 用于本地认证
-  role      UserRole @default(USER)
+  password  String?
+  role      UserRole   @default(USER)
   avatar    String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // 关联关系
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  accounts  Account[]
   documents Document[]
   queries   Query[]
   sessions  Session[]
-  accounts  Account[]
 
   @@map("users")
 }
@@ -34,15 +32,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -59,73 +56,67 @@ model Session {
 }
 
 model Document {
-  id            String          @id @default(cuid())
-  filename      String
-  originalName  String
-  mimeType      String
-  size          Int
-  path          String?         // 文件存储路径
-  status        DocumentStatus  @default(PENDING)
-  uploadedBy    String
-  processingStartedAt DateTime?
+  id                    String          @id @default(cuid())
+  filename              String
+  originalName          String
+  mimeType              String
+  size                  Int
+  path                  String?
+  status                DocumentStatus  @default(PENDING)
+  uploadedBy            String
+  processingStartedAt   DateTime?
   processingCompletedAt DateTime?
-  errorMessage  String?
-  metadata      Json?           // 额外元数据
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-
-  // 关联关系
-  user          User            @relation(fields: [uploadedBy], references: [id])
-  chunks        DocumentChunk[]
+  errorMessage          String?
+  metadata              Json?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  chunks                DocumentChunk[]
+  user                  User            @relation(fields: [uploadedBy], references: [id])
 
   @@map("documents")
 }
 
 model DocumentChunk {
-  id          String   @id @default(cuid())
-  documentId  String
-  content     String   @db.Text
-  chunkIndex  Int
-  vectorId    String   // Milvus向量ID
-  metadata    Json?
-  createdAt   DateTime @default(now())
-
-  // 关联关系
-  document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  documentId String
+  content    String
+  chunkIndex Int
+  vectorId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@unique([documentId, chunkIndex])
   @@map("document_chunks")
 }
 
 model Query {
-  id          String    @id @default(cuid())
-  text        String    @db.Text
-  response    String?   @db.Text
-  userId      String
-  responseTime Int?     // 响应时间(ms)
-  sources     Json?     // 检索到的源文档
-  status      QueryStatus @default(PENDING)
-  metadata    Json?     // 查询元数据
-  createdAt   DateTime  @default(now())
-
-  // 关联关系
-  user        User      @relation(fields: [userId], references: [id])
+  id           String      @id @default(cuid())
+  text         String
+  response     String?
+  userId       String
+  responseTime Int?
+  sources      Json?
+  status       QueryStatus @default(PENDING)
+  metadata     Json?
+  createdAt    DateTime    @default(now())
+  deletedAt    DateTime?
+  user         User        @relation(fields: [userId], references: [id])
 
   @@map("queries")
 }
 
 model SystemConfig {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  value     Json
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
   description String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("system_config")
 }
 
-// 枚举类型
 enum UserRole {
   USER
   ADMIN
@@ -133,16 +124,17 @@ enum UserRole {
 }
 
 enum DocumentStatus {
-  PENDING      // 等待处理
-  PROCESSING   // 处理中
-  COMPLETED    // 处理完成
-  FAILED       // 处理失败
-  DELETED      // 已删除
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  DELETED
 }
 
 enum QueryStatus {
-  PENDING      // 等待处理
-  PROCESSING   // 处理中
-  COMPLETED    // 完成
-  FAILED       // 失败
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  DELETED
 }

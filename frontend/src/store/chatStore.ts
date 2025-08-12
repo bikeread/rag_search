@@ -9,6 +9,7 @@ interface ChatState {
   isLoading: boolean
   sendMessage: (content: string) => Promise<void>
   clearMessages: () => void
+  clearAllHistory: () => Promise<void>
   loadHistory: () => Promise<void>
   clearUserData: () => void
 }
@@ -58,6 +59,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   clearMessages: () => {
+    set({ messages: [] })
+    localStorage.setItem(getUserStorageKey(), JSON.stringify({ messages: [] }))
+  },
+
+  clearAllHistory: async () => {
+    await queryService.clearAllHistory()
     set({ messages: [] })
     localStorage.setItem(getUserStorageKey(), JSON.stringify({ messages: [] }))
   },

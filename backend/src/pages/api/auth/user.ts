@@ -3,6 +3,9 @@ import jwt from 'jsonwebtoken'
 import { prisma } from '@/lib/prisma'
 import { getCorsHeaders } from '@/lib/cors'
 
+// 确保应用服务已初始化
+import '@/pages/api/_app-init'
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse

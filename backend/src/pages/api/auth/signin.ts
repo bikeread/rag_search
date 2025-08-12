@@ -1,16 +1,18 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { getCorsHeaders } from '@/lib/cors'
+import { generateTokenPair } from '@/lib/jwtAuth'
+import { strictLimiter } from '../../../middleware/security'
+import { sanitizeInput } from '@/lib/validation'
 
 const signinSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 })
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+async function signinHandler(req: NextApiRequest, res: NextApiResponse) {
   const origin = req.headers.origin
   
   // Handle CORS preflight requests
@@ -43,7 +45,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     }
 
-    const { email, password } = validation.data
+    // 清理输入防止SQL注入
+    const email = sanitizeInput(validation.data.email)
+    const { password } = validation.data
 
     // Find user by email
     const user = await prisma.user.findUnique({
@@ -61,16 +65,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(401).json({ error: 'Invalid credentials' })
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
-      { 
-        userId: user.id, 
-        email: user.email,
-        role: user.role 
-      },
-      process.env.JWT_SECRET || 'fallback-secret-key',
-      { expiresIn: '7d' }
-    )
+    // 生成访问令牌和刷新令牌
+    const tokens = generateTokenPair({
+      id: user.id,
+      email: user.email,
+      name: user.name || undefined,
+      role: user.role
+    })
 
     res.status(200).json({
       user: {
@@ -79,11 +80,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         name: user.name,
         role: user.role,
       },
-      token
+      ...tokens
     })
 
   } catch (error) {
     console.error('Signin error:', error)
     res.status(500).json({ error: 'Signin failed' })
   }
+}
+
+// 应用速率限制中间件
+export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  // 应用严格限流（15分钟内最多5次尝试）
+  return new Promise((resolve) => {
+    strictLimiter(req as any, res as any, () => {
+      resolve(signinHandler(req, res))
+    })
+  })
 }

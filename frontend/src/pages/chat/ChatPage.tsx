@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Input, Button, Card, Spin, Typography, Tag } from 'antd'
+import { Input, Button, Card, Spin, Typography, Tag, Empty } from 'antd'
 import { SendOutlined, UserOutlined } from '@ant-design/icons'
 import { MessageOutlined } from '@ant-design/icons'
 import { useChatStore } from '@/store/chatStore'
+import { ClearChatButton } from '@/components/chat/ClearChatButton'
 import type { ChatMessage } from '@/types'
 import { formatDate } from '@/utils/formatters'
 
@@ -12,7 +13,7 @@ const { Text, Paragraph } = Typography
 export const ChatPage: React.FC = () => {
   const [inputValue, setInputValue] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const { messages, isLoading, sendMessage, clearMessages, loadHistory } = useChatStore()
+  const { messages, isLoading, sendMessage, loadHistory } = useChatStore()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -40,57 +41,60 @@ export const ChatPage: React.FC = () => {
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
-    }
-  }
 
   return (
     <div className="h-full flex flex-col">
       {/* 页面标题 */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">AI智能对话</h1>
-        <Button onClick={clearMessages} disabled={isLoading}>
-          清空对话
-        </Button>
+      <div className="p-4 border-b flex justify-between items-center">
+        <div>
+          <h1 className="text-xl font-bold">AI智能问答</h1>
+          <p className="text-gray-500 text-sm mt-1">
+            基于您上传的文档进行智能问答
+          </p>
+        </div>
+        <ClearChatButton />
       </div>
 
       {/* 聊天消息区域 */}
-      <div className="flex-1 bg-white rounded-lg shadow-sm border p-4 mb-4 overflow-y-auto">
-        <div className="space-y-4">
-          {messages.length === 0 ? (
-            <div className="text-center text-gray-500 mt-8">
-              <MessageOutlined className="text-4xl mb-4" />
-              <p>你好！我是AI助手，有什么问题可以问我。</p>
-            </div>
-          ) : (
-            messages.map((message, index) => (
+      <div className="flex-1 p-4 overflow-y-auto">
+        {messages.length === 0 ? (
+          <Empty 
+            description="开始对话吧！问我任何关于您文档的问题。"
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+          />
+        ) : (
+          <div className="space-y-4">
+            {messages.map((message, index) => (
               <MessageItem key={index} message={message} />
-            ))
-          )}
-          
-          {isLoading && (
-            <div className="flex items-center space-x-2">
-              <Spin size="small" />
-              <Text className="text-gray-500">AI正在思考...</Text>
-            </div>
-          )}
-          
-          <div ref={messagesEndRef} />
-        </div>
+            ))}
+            
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-gray-100 p-3 rounded-lg">
+                  <Spin size="small" />
+                  <span className="ml-2">正在思考...</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* 输入区域 */}
-      <div className="bg-white rounded-lg shadow-sm border p-4">
-        <div className="flex space-x-2">
-          <TextArea
+      <div className="p-4 border-t">
+        <div className="flex gap-2">
+          <Input.TextArea
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="输入你的问题... (Shift+Enter换行，Enter发送)"
-            autoSize={{ minRows: 1, maxRows: 4 }}
+            placeholder="输入您的问题..."
+            autoSize={{ minRows: 1, maxRows: 3 }}
+            onPressEnter={(e) => {
+              if (!e.shiftKey) {
+                e.preventDefault()
+                handleSend()
+              }
+            }}
             disabled={isLoading}
           />
           <Button
@@ -102,6 +106,9 @@ export const ChatPage: React.FC = () => {
           >
             发送
           </Button>
+        </div>
+        <div className="text-xs text-gray-500 mt-2">
+          按 Enter 发送，Shift + Enter 换行
         </div>
       </div>
     </div>

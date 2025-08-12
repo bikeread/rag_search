@@ -41,7 +41,7 @@ class Settings(BaseSettings):
         default="sentence-transformers/all-MiniLM-L6-v2",
         description="嵌入模型名称"
     )
-    embedding_dim: int = Field(default=384, description="向量维度")
+    embedding_dim: int = Field(default=2048, description="向量维度")
     embedding_batch_size: int = Field(default=32, description="批处理大小")
     max_seq_length: int = Field(default=256, description="最大序列长度")
     
