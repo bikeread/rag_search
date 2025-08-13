@@ -4,23 +4,65 @@ import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import DocumentListPage from '@/pages/documents/DocumentListPage'
 
-// Mock API services
+// Mock all dependencies
 vi.mock('@/services/documents', () => ({
-  getDocuments: vi.fn(),
-  deleteDocument: vi.fn(),
-  uploadDocument: vi.fn(),
+  documentService: {
+    getDocuments: vi.fn(() => Promise.resolve({ 
+      documents: [], 
+      pagination: { total: 0, page: 1, limit: 10, totalPages: 0, hasNext: false, hasPrev: false }
+    })),
+    deleteDocument: vi.fn(() => Promise.resolve()),
+    uploadDocument: vi.fn(() => Promise.resolve()),
+    batchDeleteDocuments: vi.fn(() => Promise.resolve({ succeeded: 0, failed: 0 })),
+  },
 }))
 
-// Mock zustand store
-vi.mock('@/store/documentStore', () => ({
-  useDocumentStore: () => ({
-    documents: [],
-    loading: false,
-    error: null,
-    fetchDocuments: vi.fn(),
-    deleteDocument: vi.fn(),
-    clearError: vi.fn(),
-  }),
+vi.mock('@/hooks/useDocuments', () => ({
+  useDocuments: vi.fn(() => ({
+    data: { 
+      documents: [], 
+      pagination: { total: 0, page: 1, limit: 10, totalPages: 0, hasNext: false, hasPrev: false }
+    },
+    isLoading: false,
+    refetch: vi.fn(),
+  })),
+  useDocumentDelete: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+  })),
+  useDocumentUpload: vi.fn(() => ({
+    mutate: vi.fn(),
+    isPending: false,
+    uploadProgress: {},
+  })),
+  useBatchOperations: vi.fn(() => ({
+    selectedRows: [],
+    batchLoading: false,
+    rowSelection: { selectedRowKeys: [], onChange: vi.fn() },
+    batchDelete: vi.fn(),
+    clearSelection: vi.fn(),
+  })),
+  useResponsiveView: vi.fn(() => ({ isMobile: false })),
+}))
+
+vi.mock('@/utils/formatters', () => ({
+  formatBytes: vi.fn((bytes) => `${bytes} B`),
+  formatDate: vi.fn((date) => '2023-01-01 12:00'),
+}))
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom')
+  return {
+    ...actual,
+    useNavigate: vi.fn(() => vi.fn()),
+  }
+})
+
+vi.mock('react-hot-toast', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
 }))
 
 // Test wrapper component
@@ -51,7 +93,7 @@ describe('文档列表页面', () => {
       render(<DocumentListPage />, { wrapper: createTestWrapper() })
       
       expect(screen.getByText('文档管理')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /上传文档/ })).toBeInTheDocument()
+      expect(screen.getAllByText('上传文档')).toHaveLength(2) // 页面顶部和空状态各有一个
       expect(screen.getByRole('button', { name: /刷新/ })).toBeInTheDocument()
       expect(screen.getByPlaceholderText('搜索文档名称')).toBeInTheDocument()
     })
@@ -59,8 +101,8 @@ describe('文档列表页面', () => {
     it('应该显示空状态当没有文档时', () => {
       render(<DocumentListPage />, { wrapper: createTestWrapper() })
       
-      // 假设没有文档时会显示空状态
-      expect(screen.getByText('暂无文档') || screen.getByText('没有找到文档')).toBeInTheDocument()
+      // 检查空状态文本（根据实际组件内容）
+      expect(screen.getByText('暂无文档')).toBeInTheDocument()
     })
   })
 
@@ -89,11 +131,14 @@ describe('文档列表页面', () => {
     it('应该能点击上传按钮', () => {
       render(<DocumentListPage />, { wrapper: createTestWrapper() })
       
-      const uploadButton = screen.getByRole('button', { name: /上传文档/ })
-      fireEvent.click(uploadButton)
+      const uploadButtons = screen.getAllByText('上传文档')
+      expect(uploadButtons).toHaveLength(2)
       
-      // 验证上传功能被触发（具体逻辑根据实际实现调整）
-      expect(uploadButton).toBeInTheDocument()
+      // 点击第一个上传按钮（页面顶部的）
+      fireEvent.click(uploadButtons[0])
+      
+      // 验证按钮存在并可点击
+      expect(uploadButtons[0]).toBeInTheDocument()
     })
   })
 

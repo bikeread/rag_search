@@ -16,7 +16,7 @@ import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { DashboardPage } from '@/pages/dashboard/DashboardPage'
 import { ChatPage } from '@/pages/chat/ChatPage'
-import { DocumentListPage } from '@/pages/documents/DocumentListPage'
+import DocumentListPage from '@/pages/documents/DocumentListPage'
 import { ProfilePage } from '@/pages/profile'
 
 import '@/styles/global.css'

@@ -18,6 +18,7 @@ export default defineConfig({
       'node_modules/**',
       'dist/**',
       'build/**',
+      'src/tests/e2e/**', // 排除E2E测试，避免Playwright冲突
     ],
     coverage: {
       provider: 'v8',

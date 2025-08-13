@@ -163,17 +163,40 @@ class MilvusClient:
         logger.info(f"Created collection {self.collection_name} with {len(fields)} fields")
         return collection
     
-    async def _create_index(self):
-        """创建向量索引"""
+    async def _create_index(self, metric_type: str = "COSINE", index_type: str = "IVF_FLAT"):
+        """创建向量索引，支持多种相似度计算和索引类型"""
         try:
-            # 向量索引参数
-            index_params = {
-                "metric_type": "COSINE",  # 余弦相似度
-                "index_type": "IVF_FLAT",  # IVF_FLAT索引
-                "params": {"nlist": 128}  # 聚类中心数量
-            }
+            # 优化的向量索引参数
+            if index_type == "IVF_FLAT":
+                index_params = {
+                    "metric_type": metric_type,
+                    "index_type": index_type,
+                    "params": {"nlist": 256}  # 增加聚类中心数量，提升搜索精度
+                }
+            elif index_type == "IVF_SQ8":
+                index_params = {
+                    "metric_type": metric_type,
+                    "index_type": index_type,
+                    "params": {"nlist": 256}
+                }
+            elif index_type == "HNSW":
+                index_params = {
+                    "metric_type": metric_type,
+                    "index_type": index_type,
+                    "params": {
+                        "M": 16,           # 每个节点的最大连接数
+                        "efConstruction": 200  # 构建时的搜索深度
+                    }
+                }
+            else:
+                # 默认使用IVF_FLAT
+                index_params = {
+                    "metric_type": metric_type,
+                    "index_type": "IVF_FLAT",
+                    "params": {"nlist": 256}
+                }
             
-            logger.info("Creating vector index...")
+            logger.info(f"Creating {index_type} index with {metric_type} metric...")
             self.collection.create_index(
                 field_name="embedding",
                 index_params=index_params
@@ -251,38 +274,75 @@ class MilvusClient:
     async def search_vectors(self, 
                            query_vector: List[float], 
                            top_k: int = 5,
-                           filters: Dict = None) -> List[Dict]:
+                           filters: Dict = None,
+                           metric_type: str = "COSINE",
+                           search_precision: str = "high") -> List[Dict]:
         """
-        向量相似性搜索
+        优化的向量相似性搜索，支持多种搜索精度级别
         
         Args:
             query_vector: 查询向量
             top_k: 返回结果数量
             filters: 搜索过滤条件
+            metric_type: 相似度计算方法 (COSINE, L2, IP)
+            search_precision: 搜索精度级别 (low, medium, high, ultra)
             
         Returns:
-            List[Dict]: 搜索结果列表
+            List[Dict]: 搜索结果列表，按相似度分数降序排列
         """
         if not self.is_connected:
             await self.connect()
         
         try:
-            # 搜索参数
-            search_params = {
-                "metric_type": "COSINE",
-                "params": {"nprobe": 10}  # 搜索的聚类中心数量
+            # 根据精度级别配置搜索参数
+            nprobe_config = {
+                "low": 8,      # 快速搜索，精度较低
+                "medium": 16,  # 平衡搜索
+                "high": 32,    # 高精度搜索
+                "ultra": 64    # 最高精度搜索
             }
             
-            # 构建搜索表达式
+            nprobe = nprobe_config.get(search_precision, 32)
+            
+            # 搜索参数
+            search_params = {
+                "metric_type": metric_type,
+                "params": {"nprobe": nprobe}
+            }
+            
+            # 构建过滤表达式
             expr = None
             if filters:
                 conditions = []
+                
+                # 文档ID过滤
                 if "document_id" in filters:
-                    conditions.append(f'document_id == "{filters["document_id"]}"')
+                    if isinstance(filters["document_id"], list):
+                        doc_ids = ", ".join([f'"{doc_id}"' for doc_id in filters["document_id"]])
+                        conditions.append(f'document_id in [{doc_ids}]')
+                    else:
+                        conditions.append(f'document_id == "{filters["document_id"]}"')
+                
+                # 分数阈值过滤
+                if "min_score" in filters:
+                    # 注意：Milvus中相似度分数的阈值需要在搜索后过滤
+                    pass  # 将在结果处理中进行过滤
+                
+                # 时间范围过滤
+                if "time_range" in filters:
+                    time_range = filters["time_range"]
+                    if "start" in time_range:
+                        conditions.append(f"created_at >= {time_range['start']}")
+                    if "end" in time_range:
+                        conditions.append(f"created_at <= {time_range['end']}")
+                
                 if conditions:
                     expr = " and ".join(conditions)
             
-            logger.debug(f"Searching for {top_k} similar vectors")
+            logger.debug(f"Searching for {top_k} similar vectors with {search_precision} precision")
+            logger.debug(f"Search params: metric={metric_type}, nprobe={nprobe}")
+            if expr:
+                logger.debug(f"Filter expression: {expr}")
             
             # 执行搜索
             search_results = self.collection.search(
@@ -294,26 +354,42 @@ class MilvusClient:
                 output_fields=["id", "text", "document_id", "chunk_index", "created_at"]
             )
             
-            # 格式化结果
+            # 格式化和过滤结果
             formatted_results = []
+            min_score = filters.get("min_score", 0.0) if filters else 0.0
+            
             for hits in search_results:
                 for hit in hits:
-                    # 调试信息：查看返回的实体字段
-                    logger.info(f"Debug: hit.entity fields: {list(hit.entity.keys()) if hasattr(hit.entity, 'keys') else 'No keys'}")
-                    logger.info(f"Debug: hit.entity.text = '{hit.entity.get('text')}'")
+                    # 应用分数阈值过滤
+                    if hit.score < min_score:
+                        continue
                     
-                    result = {
-                        "id": hit.id,
-                        "score": float(hit.score),
-                        "text": hit.entity.get("text"),
-                        "document_id": hit.entity.get("document_id"),
-                        "chunk_index": hit.entity.get("chunk_index"),
-                        "created_at": hit.entity.get("created_at"),
-                        "metadata": {}
-                    }
-                    formatted_results.append(result)
+                    # 安全提取实体数据
+                    try:
+                        entity = hit.entity
+                        result = {
+                            "id": hit.id,
+                            "score": float(hit.score),
+                            "text": entity.get("text") or "",
+                            "document_id": entity.get("document_id") or "",
+                            "chunk_index": entity.get("chunk_index") or 0,
+                            "created_at": entity.get("created_at") or 0,
+                            "metadata": {
+                                "metric_type": metric_type,
+                                "search_precision": search_precision,
+                                "nprobe": nprobe
+                            }
+                        }
+                        formatted_results.append(result)
+                        
+                    except Exception as entity_error:
+                        logger.warning(f"Error parsing search result entity: {entity_error}")
+                        continue
             
-            logger.info(f"Found {len(formatted_results)} similar vectors")
+            # 按分数排序（降序）
+            formatted_results.sort(key=lambda x: x["score"], reverse=True)
+            
+            logger.info(f"Found {len(formatted_results)} similar vectors (filtered by score >= {min_score})")
             return formatted_results
             
         except Exception as e:
@@ -439,6 +515,67 @@ class MilvusClient:
         except Exception as e:
             logger.error(f"Failed to reset collection: {str(e)}")
             return False
+    
+    async def reset_collection(self) -> bool:
+        """重置集合 - 删除并重新创建"""
+        try:
+            logger.info(f"Resetting collection {self.collection_name}...")
+            
+            # 如果集合存在，先删除
+            if utility.has_collection(self.collection_name):
+                collection_to_drop = Collection(self.collection_name)
+                collection_to_drop.release()
+                utility.drop_collection(self.collection_name)
+                logger.info(f"Dropped existing collection {self.collection_name}")
+                
+            # 重新创建集合
+            self.collection = await self._create_collection()
+            
+            # 创建索引
+            await self._create_index()
+            
+            # 加载到内存
+            self.collection.load()
+            
+            logger.info(f"Collection {self.collection_name} reset successfully")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to reset collection: {str(e)}")
+            return False
+
+    async def optimize_search_params(self, collection_size: int = None) -> Dict[str, Any]:
+        """根据集合大小动态优化搜索参数"""
+        try:
+            if not collection_size:
+                collection_size = self.collection.num_entities
+            
+            # 根据集合大小动态调整nprobe
+            if collection_size < 10000:
+                recommended_nprobe = min(32, max(8, collection_size // 100))
+            elif collection_size < 100000:
+                recommended_nprobe = min(64, max(16, collection_size // 1000))
+            else:
+                recommended_nprobe = min(128, max(32, collection_size // 5000))
+            
+            # 推荐的搜索配置
+            optimization_config = {
+                "collection_size": collection_size,
+                "recommended_nprobe": recommended_nprobe,
+                "precision_configs": {
+                    "fast": {"nprobe": max(8, recommended_nprobe // 4)},
+                    "balanced": {"nprobe": max(16, recommended_nprobe // 2)},
+                    "accurate": {"nprobe": recommended_nprobe},
+                    "ultra_accurate": {"nprobe": min(128, recommended_nprobe * 2)}
+                }
+            }
+            
+            logger.info(f"Optimized search parameters for collection size {collection_size}")
+            return optimization_config
+            
+        except Exception as e:
+            logger.error(f"Failed to optimize search params: {str(e)}")
+            return {"error": str(e)}
     
     async def close(self):
         """关闭连接"""

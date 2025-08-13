@@ -1,0 +1,67 @@
+{
+  "tasks": [
+    {
+      "id": "ee371b01-5137-472e-8052-480826edc8bc",
+      "name": "上传GitHub项目测试文档到RAG系统",
+      "description": "将RAG系统测试文档-GitHub项目集合.md上传到RAG系统进行处理，确保文档被正确解析、分块和向量化存储，为后续测试提供数据基础。验证文档状态从PROCESSING转为COMPLETED，检查chunks表数据写入情况。",
+      "notes": "重用现有文档上传基础设施，无需新建组件",
+      "status": "completed",
+      "dependencies": [],
+      "createdAt": "2025-08-12T08:59:58.724Z",
+      "updatedAt": "2025-08-12T11:31:16.783Z",
+      "relatedFiles": [
+        {
+          "path": "/home/bikeread/dev/rag_search/RAG系统测试文档-GitHub项目集合.md",
+          "type": "REFERENCE",
+          "description": "待上传的测试文档"
+        },
+        {
+          "path": "/home/bikeread/dev/rag_search/backend/src/pages/api/documents/upload.ts",
+          "type": "REFERENCE",
+          "description": "文档上传API"
+        },
+        {
+          "path": "/home/bikeread/dev/rag_search/tests/test_complete_rag_system.py",
+          "type": "REFERENCE",
+          "description": "现有测试脚本参考"
+        }
+      ],
+      "implementationGuide": "使用现有文档上传API POST /api/documents/upload，调用流程：\\n1. 读取测试文档内容\\n2. 通过multipart/form-data格式上传\\n3. 监控文档处理状态直到COMPLETED\\n4. 验证chunks表写入结果\\n5. 确认向量化存储成功",
+      "verificationCriteria": "文档上传成功，状态为COMPLETED，chunks表有数据写入，向量化存储正常",
+      "analysisResult": "基于RAG系统测试文档全面验证混合检索RAG系统能力，测试30个预定义问题验证信息检索准确性、语义理解能力、关联分析能力和实用建议生成能力，评估准确性>95%、完整性>90%、实用性>95%、扩展性>80%等关键指标，根据测试结果循环修复代码直到达标。",
+      "summary": "GitHub项目测试文档上传任务完全成功。文档ID: cme8gn7nn002arc9k88c3uk46，状态已转为COMPLETED，成功生成13个文档块并完成向量化存储。文档包含bikeread的三个核心GitHub项目(dify_wechat_plugin、rag_search、thesis_work_flow)的详细信息，为后续RAG系统测试提供了优质的数据基础。验证标准完全满足：文档处理完成、chunks表正常写入13条记录、向量化存储成功。",
+      "completedAt": "2025-08-12T11:31:16.780Z"
+    },
+    {
+      "id": "10fcb7a4-7bf7-454f-8d7a-c64c69e27b03",
+      "name": "创建RAG系统验证测试subagent",
+      "description": "基于官方subagent标准创建专门的RAG验证测试subagent，负责执行30个预定义问题的测试，评估系统在信息检索、技术分析、关联分析等维度的表现，并生成详细的测试报告。",
+      "notes": "subagent需要具备自主执行测试和分析结果的能力",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "ee371b01-5137-472e-8052-480826edc8bc"
+        }
+      ],
+      "createdAt": "2025-08-12T08:59:58.724Z",
+      "updatedAt": "2025-08-12T11:43:21.417Z",
+      "relatedFiles": [
+        {
+          "path": "/home/bikeread/dev/rag_search/test_hybrid_final.py",
+          "type": "REFERENCE",
+          "description": "现有测试脚本模板"
+        },
+        {
+          "path": "/home/bikeread/dev/rag_search/RAG系统测试文档-GitHub项目集合.md",
+          "type": "REFERENCE",
+          "description": "包含30个预定义测试问题"
+        }
+      ],
+      "implementationGuide": "使用Task工具创建subagent：\\n1. 定义agent角色：RAG系统验证专家\\n2. 配置测试能力：问题执行、结果分析、指标评估\\n3. 集成现有测试工具：httpx、pandas、统计分析\\n4. 设计测试报告格式\\n5. 实现测试结果持久化",
+      "verificationCriteria": "subagent创建成功，能够自主执行测试问题并生成结构化报告",
+      "analysisResult": "基于RAG系统测试文档全面验证混合检索RAG系统能力，测试30个预定义问题验证信息检索准确性、语义理解能力、关联分析能力和实用建议生成能力，评估准确性>95%、完整性>90%、实用性>95%、扩展性>80%等关键指标，根据测试结果循环修复代码直到达标。",
+      "summary": "成功创建并执行了RAG验证测试subagent，完成了30个问题的全面测试。测试结果显示：系统成功率86.7%，答案准确性53.4%，完整性41.2%，相关性86.7%。虽然未达到所有预期指标，但成功识别了关键问题（JWT管理、答案质量、响应时间），为后续优化提供了明确方向。混合检索架构（BM25+向量搜索+RRF融合）工作正常，证明了Task 4实现的有效性。",
+      "completedAt": "2025-08-12T11:43:21.414Z"
+    }
+  ]
+}

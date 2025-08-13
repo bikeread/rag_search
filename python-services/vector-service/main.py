@@ -55,9 +55,9 @@ class CPUVectorizer:
             'were', 'will', 'with'
         ])
         
-        # 优化的TF-IDF向量化器配置 - 提升准确性
+        # 优化的TF-IDF向量化器配置 - 与Milvus集合维度匹配
         self.tfidf = TfidfVectorizer(
-            max_features=2048,        # 扩展词汇表至2048提升覆盖度
+            max_features=384,         # 设置为384维匹配Milvus集合
             stop_words=None,          # 不使用内置停用词，后续手动处理
             ngram_range=(1, 2),       # 支持1-gram和2-gram短语匹配
             min_df=1,                 # 最少出现1次，适配小数据集
@@ -72,7 +72,7 @@ class CPUVectorizer:
             use_idf=True              # 启用IDF加权
         )
         self.is_fitted = False
-        self.target_dim = 2048         # 目标向量维度升级为2048
+        self.target_dim = 384          # 目标向量维度匹配Milvus集合
         self.stop_words = chinese_stop_words  # 中英文停用词
         self.vocabulary_base = []      # 基础词汇表
         

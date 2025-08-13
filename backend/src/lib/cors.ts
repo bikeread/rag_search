@@ -8,6 +8,8 @@ const getAllowedOrigins = (): string[] => {
     // 开发环境
     'http://localhost:3000',
     'http://127.0.0.1:3000',
+    'http://localhost:3002',  // 添加Playwright测试端口
+    'http://127.0.0.1:3002',
     
     // 从环境变量读取生产域名
     process.env.FRONTEND_URL,

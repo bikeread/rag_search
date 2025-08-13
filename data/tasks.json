@@ -1,0 +1,159 @@
+{
+  "tasks": [
+    {
+      "id": "e4c9afba-b092-4d5b-9042-4c2d1500add5",
+      "name": "添加Cross-Encoder依赖和环境配置",
+      "description": "为项目添加sentence-transformers库依赖，配置Cross-Encoder相关的环境变量和配置选项，确保支持CPU和GPU环境的模型加载。",
+      "notes": "注意检查sentence-transformers与现有依赖的兼容性，特别是torch版本",
+      "status": "pending",
+      "dependencies": [],
+      "createdAt": "2025-08-13T03:40:01.283Z",
+      "updatedAt": "2025-08-13T03:40:01.283Z",
+      "relatedFiles": [
+        {
+          "path": "/home/bikeread/dev/rag_search/python-services/rag-service/requirements.txt",
+          "type": "TO_MODIFY",
+          "description": "添加sentence-transformers依赖"
+        }
+      ],
+      "implementationGuide": "1. 更新requirements.txt添加sentence-transformers>=2.2.2\\n2. 在main.py顶部添加相关导入\\n3. 添加环境变量配置：\\n   - CROSS_ENCODER_MODEL (默认: cross-encoder/ms-marco-MiniLM-L-6-v2)\\n   - ENABLE_CROSS_ENCODER_RERANK (默认: true)\\n   - CROSS_ENCODER_CANDIDATE_COUNT (默认: 15)\\n   - CROSS_ENCODER_BATCH_SIZE (默认: 8)",
+      "verificationCriteria": "依赖安装成功，环境变量可正确读取，模型可在CPU/GPU环境加载",
+      "analysisResult": "为RAG检索系统实现Cross-Encoder重排序功能，目标提升准确率20%（从53.4%到73.4%+）。基于现有完善的混合检索架构（HybridRetriever），通过添加CrossEncoderReranker作为第三阶段精排，实现两阶段检索：混合召回→Cross-encoder重排序。确保性能优化（延迟<2秒）、无缝集成、配置灵活性和评估监控。"
+    },
+    {
+      "id": "abf181e0-a95e-485a-bc95-fa7ac496fe1e",
+      "name": "实现CrossEncoderReranker核心类",
+      "description": "创建CrossEncoderReranker类，实现Cross-Encoder模型的加载、批处理推理和重排序逻辑。支持模型懒加载、批处理优化和GPU加速。",
+      "notes": "重点优化批处理性能，添加异常处理确保服务稳定性",
+      "status": "pending",
+      "dependencies": [
+        {
+          "taskId": "e4c9afba-b092-4d5b-9042-4c2d1500add5"
+        }
+      ],
+      "createdAt": "2025-08-13T03:40:01.283Z",
+      "updatedAt": "2025-08-13T03:40:01.283Z",
+      "relatedFiles": [
+        {
+          "path": "/home/bikeread/dev/rag_search/python-services/rag-service/main.py",
+          "type": "TO_MODIFY",
+          "description": "在HybridRetriever类前添加CrossEncoderReranker类",
+          "lineStart": 1405,
+          "lineEnd": 1405
+        }
+      ],
+      "implementationGuide": "pseudocode实现：\\nclass CrossEncoderReranker:\\n    def __init__(self, model_name, batch_size, device):\\n        # 懒加载模型配置\\n        self.model = None\\n        self.model_name = model_name\\n        self.batch_size = batch_size\\n        \\n    def _load_model(self):\\n        # 懒加载Cross-Encoder模型\\n        from sentence_transformers import CrossEncoder\\n        self.model = CrossEncoder(self.model_name)\\n        \\n    def rerank(self, query, documents, top_k):\\n        # 1. 检查模型是否已加载\\n        # 2. 构建查询-文档对\\n        # 3. 批处理推理获取分数\\n        # 4. 重新排序并返回top_k结果",
+      "verificationCriteria": "模型可正确加载，批处理推理正常，重排序结果合理，性能满足要求",
+      "analysisResult": "为RAG检索系统实现Cross-Encoder重排序功能，目标提升准确率20%（从53.4%到73.4%+）。基于现有完善的混合检索架构（HybridRetriever），通过添加CrossEncoderReranker作为第三阶段精排，实现两阶段检索：混合召回→Cross-encoder重排序。确保性能优化（延迟<2秒）、无缝集成、配置灵活性和评估监控。"
+    },
+    {
+      "id": "f6432e30-ecc7-4017-ad29-bfbf0f969031",
+      "name": "集成重排序功能到HybridRetriever",
+      "description": "在HybridRetriever类中添加Cross-Encoder重排序功能，实现hybrid_search_with_rerank方法，保持现有API的向后兼容性。",
+      "notes": "确保重排序失败时能够降级到原始混合检索结果，不影响服务可用性",
+      "status": "pending",
+      "dependencies": [
+        {
+          "taskId": "abf181e0-a95e-485a-bc95-fa7ac496fe1e"
+        }
+      ],
+      "createdAt": "2025-08-13T03:40:01.283Z",
+      "updatedAt": "2025-08-13T03:40:01.283Z",
+      "relatedFiles": [
+        {
+          "path": "/home/bikeread/dev/rag_search/python-services/rag-service/main.py",
+          "type": "TO_MODIFY",
+          "description": "修改HybridRetriever类添加重排序功能",
+          "lineStart": 1405,
+          "lineEnd": 1700
+        }
+      ],
+      "implementationGuide": "在HybridRetriever类中添加：\\n1. __init__中初始化CrossEncoderReranker实例\\n2. 添加hybrid_search_with_rerank方法：\\n   pseudocode:\\n   async def hybrid_search_with_rerank(self, query, top_k, enable_rerank=True):\\n       # 1. 调用现有hybrid_search获取候选结果\\n       # 2. 如果enable_rerank=True且候选数量>阈值：\\n       #    - 调用cross_encoder_reranker.rerank()\\n       #    - 返回重排序结果\\n       # 3. 否则返回原始hybrid_search结果",
+      "verificationCriteria": "重排序功能正常工作，降级机制有效，API向后兼容，性能符合要求",
+      "analysisResult": "为RAG检索系统实现Cross-Encoder重排序功能，目标提升准确率20%（从53.4%到73.4%+）。基于现有完善的混合检索架构（HybridRetriever），通过添加CrossEncoderReranker作为第三阶段精排，实现两阶段检索：混合召回→Cross-encoder重排序。确保性能优化（延迟<2秒）、无缝集成、配置灵活性和评估监控。"
+    },
+    {
+      "id": "bfb0c117-d276-493f-b8b6-81ccf36b3d72",
+      "name": "更新API端点支持重排序参数",
+      "description": "修改QueryRequest模型和/query端点，添加重排序相关参数，支持客户端控制重排序行为。",
+      "notes": "保持API的向后兼容性，确保现有客户端无需修改即可正常工作",
+      "status": "pending",
+      "dependencies": [
+        {
+          "taskId": "f6432e30-ecc7-4017-ad29-bfbf0f969031"
+        }
+      ],
+      "createdAt": "2025-08-13T03:40:01.283Z",
+      "updatedAt": "2025-08-13T03:40:01.283Z",
+      "relatedFiles": [
+        {
+          "path": "/home/bikeread/dev/rag_search/python-services/rag-service/main.py",
+          "type": "TO_MODIFY",
+          "description": "更新API模型和端点",
+          "lineStart": 1715,
+          "lineEnd": 1750
+        },
+        {
+          "path": "/home/bikeread/dev/rag_search/python-services/rag-service/main.py",
+          "type": "TO_MODIFY",
+          "description": "修改query端点实现",
+          "lineStart": 1833,
+          "lineEnd": 2000
+        }
+      ],
+      "implementationGuide": "1. 更新QueryRequest类添加字段：\\n   - enable_cross_encoder_rerank: Optional[bool] = True\\n   - cross_encoder_candidate_count: Optional[int] = 15\\n2. 修改query_documents函数：\\n   - 读取重排序参数\\n   - 根据enable_cross_encoder_rerank选择调用hybrid_search或hybrid_search_with_rerank\\n3. 更新QueryResponse添加重排序信息：\\n   - rerank_info: Optional[Dict[str, Any]] = None",
+      "verificationCriteria": "API参数正确传递，重排序功能可通过API控制，响应包含重排序信息",
+      "analysisResult": "为RAG检索系统实现Cross-Encoder重排序功能，目标提升准确率20%（从53.4%到73.4%+）。基于现有完善的混合检索架构（HybridRetriever），通过添加CrossEncoderReranker作为第三阶段精排，实现两阶段检索：混合召回→Cross-encoder重排序。确保性能优化（延迟<2秒）、无缝集成、配置灵活性和评估监控。"
+    },
+    {
+      "id": "3e952ab1-6abe-471e-98eb-c4fda1621487",
+      "name": "添加重排序性能监控和评估",
+      "description": "实现重排序效果的监控和评估机制，包括性能指标收集、准确率对比和响应时间统计。",
+      "notes": "评估指标应该轻量级，不影响整体性能",
+      "status": "pending",
+      "dependencies": [
+        {
+          "taskId": "bfb0c117-d276-493f-b8b6-81ccf36b3d72"
+        }
+      ],
+      "createdAt": "2025-08-13T03:40:01.283Z",
+      "updatedAt": "2025-08-13T03:40:01.283Z",
+      "relatedFiles": [
+        {
+          "path": "/home/bikeread/dev/rag_search/python-services/rag-service/main.py",
+          "type": "TO_MODIFY",
+          "description": "添加评估功能",
+          "lineStart": 1772,
+          "lineEnd": 1811
+        }
+      ],
+      "implementationGuide": "1. 在重排序过程中收集指标：\\n   - 重排序前后结果对比\\n   - 重排序耗时统计\\n   - 候选文档数量\\n2. 添加评估功能：\\n   - 计算NDCG@K提升\\n   - 统计排序变化度\\n   - 记录性能指标\\n3. 更新health端点显示重排序状态\\n4. 在查询响应中包含重排序统计信息",
+      "verificationCriteria": "监控指标正确收集，评估功能正常工作，health端点显示重排序状态",
+      "analysisResult": "为RAG检索系统实现Cross-Encoder重排序功能，目标提升准确率20%（从53.4%到73.4%+）。基于现有完善的混合检索架构（HybridRetriever），通过添加CrossEncoderReranker作为第三阶段精排，实现两阶段检索：混合召回→Cross-encoder重排序。确保性能优化（延迟<2秒）、无缝集成、配置灵活性和评估监控。"
+    },
+    {
+      "id": "d890adb6-6eeb-4cae-9983-8b557c2ebb84",
+      "name": "创建重排序功能测试用例",
+      "description": "创建专门的测试脚本验证Cross-Encoder重排序功能的正确性、性能和准确率提升效果。",
+      "notes": "测试应该覆盖多种查询类型，包括数值查询、技术查询和对比查询",
+      "status": "pending",
+      "dependencies": [
+        {
+          "taskId": "3e952ab1-6abe-471e-98eb-c4fda1621487"
+        }
+      ],
+      "createdAt": "2025-08-13T03:40:01.283Z",
+      "updatedAt": "2025-08-13T03:40:01.283Z",
+      "relatedFiles": [
+        {
+          "path": "/home/bikeread/dev/rag_search/python-services/rag-service/test_cross_encoder_rerank.py",
+          "type": "CREATE",
+          "description": "Cross-Encoder重排序功能测试脚本"
+        }
+      ],
+      "implementationGuide": "创建test_cross_encoder_rerank.py：\\n1. 测试CrossEncoderReranker类：\\n   - 模型加载测试\\n   - 批处理推理测试\\n   - 重排序结果验证\\n2. 测试HybridRetriever集成：\\n   - 重排序功能测试\\n   - 降级机制测试\\n   - 性能基准测试\\n3. 端到端测试：\\n   - API参数传递测试\\n   - 准确率对比测试\\n   - 响应时间测试",
+      "verificationCriteria": "所有测试用例通过，重排序功能正确，性能符合预期，准确率有明显提升",
+      "analysisResult": "为RAG检索系统实现Cross-Encoder重排序功能，目标提升准确率20%（从53.4%到73.4%+）。基于现有完善的混合检索架构（HybridRetriever），通过添加CrossEncoderReranker作为第三阶段精排，实现两阶段检索：混合召回→Cross-encoder重排序。确保性能优化（延迟<2秒）、无缝集成、配置灵活性和评估监控。"
+    }
+  ]
+}

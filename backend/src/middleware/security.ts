@@ -27,6 +27,13 @@ export const apiLimiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true, // 返回 `RateLimit-*` 头部
   legacyHeaders: false, // 禁用 `X-RateLimit-*` 头部
+  keyGenerator: (req: any) => {
+    // 优先使用真实IP，fallback到连接IP
+    return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || 
+           req.connection?.remoteAddress || 
+           req.socket?.remoteAddress || 
+           'unknown';
+  },
   handler: (req: any, res: any) => {
     res.status(429).json({
       error: 'Too many requests',

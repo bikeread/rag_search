@@ -9,7 +9,7 @@ export default defineConfig({
   reporter: 'html',
   
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:3002',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
@@ -41,7 +41,7 @@ export default defineConfig({
   webServer: [
     {
       command: 'cd frontend && npm run dev',
-      url: 'http://localhost:3000',
+      url: 'http://localhost:3002',
       reuseExistingServer: !process.env.CI,
     },
     {

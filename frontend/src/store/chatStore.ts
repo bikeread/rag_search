@@ -77,16 +77,27 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   loadHistory: async () => {
     try {
-      // 首先从localStorage加载（快速显示）
       const key = getUserStorageKey()
+      
+      // 首先从localStorage加载（快速显示）
       const stored = localStorage.getItem(key)
       if (stored) {
         const data = JSON.parse(stored)
         set({ messages: data.messages || [] })
       }
 
-      // 然后从服务器加载最新历史记录
-      const historyResponse = await queryService.getQueryHistory({ limit: 50 })
+      // 从服务器加载历史记录（过滤已删除记录，默认逻辑已处理）
+      const historyResponse = await queryService.getQueryHistory({ 
+        limit: 50
+        // 后端已过滤 DELETED 状态记录
+      })
+      
+      // 如果后端返回空数据且本地有数据，说明被清空了
+      if (!historyResponse.queries || historyResponse.queries.length === 0) {
+        set({ messages: [] })
+        localStorage.removeItem(key)
+        return
+      }
       
       // 转换后端查询历史为前端聊天消息格式
       const messages: ChatMessage[] = []

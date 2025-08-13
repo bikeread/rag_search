@@ -80,7 +80,9 @@ async function signinHandler(req: NextApiRequest, res: NextApiResponse) {
         name: user.name,
         role: user.role,
       },
-      ...tokens
+      token: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresIn: tokens.expiresIn
     })
 
   } catch (error) {

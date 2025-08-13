@@ -1,0 +1,70 @@
+{
+  "tasks": [
+    {
+      "id": "0a9536dc-0e74-4b80-8f3d-83a27ddb1562",
+      "name": "检索质量优化 - BM25分词和向量匹配精度提升",
+      "description": "针对基础信息检索平均得分66.2%，重点解决数值型信息混淆和专有名词识别不准确问题。优化BM25中英文分词策略，改进TF-IDF向量化质量，调整RRF融合算法参数以提升检索精度。",
+      "notes": "重点解决测试中发现的具体问题：star数量识别错误、编程语言混淆、专有名词检索不准确",
+      "status": "completed",
+      "dependencies": [],
+      "createdAt": "2025-08-12T12:46:33.684Z",
+      "updatedAt": "2025-08-12T12:59:54.493Z",
+      "relatedFiles": [
+        {
+          "path": "python-services/rag-service/main.py",
+          "type": "TO_MODIFY",
+          "description": "BM25TextRetriever类和HybridRetriever类优化",
+          "lineStart": 98,
+          "lineEnd": 282
+        },
+        {
+          "path": "python-services/rag-service/requirements.txt",
+          "type": "TO_MODIFY",
+          "description": "添加jieba==0.42.1中文分词库",
+          "lineStart": 1,
+          "lineEnd": 10
+        }
+      ],
+      "implementationGuide": "基于测试结果优化检索核心组件：\\n\\n1. **精确数值检索优化** (解决star数量20%准确率问题)\\n```python\\n# 增强数值信息提取\\ndef extract_numerical_info(text: str) -> Dict[str, Any]:\\n    patterns = {\\n        'stars': r'(\\\\d+)\\\\s*(?:star|⭐|stars)',\\n        'forks': r'(\\\\d+)\\\\s*(?:fork|forks)',\\n        'commits': r'(\\\\d+)\\\\s*(?:commit|commits)',\\n        'years': r'(20\\\\d{2})',\\n        'versions': r'v?(\\\\d+\\\\.\\\\d+(?:\\\\.\\\\d+)?)'\\n    }\\n    return {key: re.findall(pattern, text, re.IGNORECASE) for key, pattern in patterns.items()}\\n```\\n\\n2. **专有名词BM25优化** (提升编程语言识别准确率)\\n```python\\nimport jieba\\njieba.add_word('React')\\njieba.add_word('TypeScript')\\njieba.add_word('Python')\\njieba.add_word('FastAPI')\\n\\n# 专业术语词典\\nTECH_TERMS = {'react', 'typescript', 'python', 'fastapi', 'nextjs', 'prisma', 'milvus', 'ollama'}\\n\\ndef _preprocess_text_v2(self, text: str) -> List[str]:\\n    # 保护专业术语\\n    protected_terms = []\\n    for term in TECH_TERMS:\\n        if term.lower() in text.lower():\\n            protected_terms.append(term)\\n    \\n    # 中文分词 + 英文处理\\n    chinese_tokens = jieba.lcut(text)\\n    english_tokens = re.findall(r'[a-zA-Z][a-zA-Z0-9_]*', text)\\n    numeric_tokens = re.findall(r'\\\\d+', text)\\n    \\n    # 合并并去重\\n    all_tokens = list(set(chinese_tokens + english_tokens + numeric_tokens + protected_terms))\\n    return [t for t in all_tokens if len(t) > 1 and t.lower() not in self.stop_words]\\n```\\n\\n3. **RRF算法参数精调**\\n```python\\n# 基于测试结果调整参数\\ndef _fuse_results_v2(self, vector_results, bm25_results, top_k=5):\\n    # 针对不同查询类型动态调整权重\\n    if self._is_numerical_query(query):\\n        vector_weight, bm25_weight = 0.3, 0.7  # 数值查询更依赖BM25\\n    elif self._is_technical_query(query):\\n        vector_weight, bm25_weight = 0.8, 0.2  # 技术查询更依赖向量\\n    else:\\n        vector_weight, bm25_weight = 0.6, 0.4  # 默认平衡\\n    \\n    k = 40  # 从60调整为40，提高头部结果权重\\n    # ... RRF算法实现\\n```",
+      "verificationCriteria": "1. 基础信息检索测试平均得分从66.2%提升到85%+ 2. 数值型问题(star数量)准确率从20%提升到90%+ 3. 编程语言识别准确率从20%提升到85%+ 4. 专有名词和技术术语检索准确率>90% 5. Phase1测试6个问题准确率均>80%",
+      "analysisResult": "RAG系统准确率提升专项计划：基于混合检索测试结果分析（当前53.4%准确率），通过检索质量、Prompt工程、数据处理、答案验证四个核心维度的系统性优化，将准确率从53.4%提升到95%目标。重点解决编程语言识别20%准确率、系统组件分析0%准确性、数值型信息混淆等关键问题",
+      "summary": "成功实现RAG检索质量优化，包括：1）实现精确数值信息提取，支持star、fork、commit等数值模式识别；2）优化BM25分词策略，集成jieba中文分词和专业术语词典，支持技术术语精确识别；3）实现动态权重调整，数值查询自动使用(0.3,0.7)权重，技术查询使用(0.8,0.2)权重；4）优化RRF参数从k=60调整为k=40，提升头部结果权重；5）测试验证显示混合检索工作正常，能准确回答数值和技术类问题，有效解决了star数量识别、编程语言识别等问题，为后续prompt工程打好基础。",
+      "completedAt": "2025-08-12T12:59:54.489Z"
+    },
+    {
+      "id": "1cbd7041-02f0-48a7-ada1-e6e29ac52c0e",
+      "name": "LLM Prompt工程优化 - 结构化输出和问题理解提升",
+      "description": "针对技术分析平均得分72.2%和系统组件分析0%准确性问题，重新设计分层Prompt模板，实现问题类型自动识别，加强LLM对技术细节的理解和结构化输出能力。",
+      "notes": "重点解决系统组件分析0%准确性和技术分析不深入的问题。基于实际测试失败案例设计针对性Prompt",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "0a9536dc-0e74-4b80-8f3d-83a27ddb1562"
+        }
+      ],
+      "createdAt": "2025-08-12T12:46:33.684Z",
+      "updatedAt": "2025-08-12T13:16:01.311Z",
+      "relatedFiles": [
+        {
+          "path": "python-services/rag-service/main.py",
+          "type": "TO_MODIFY",
+          "description": "OllamaClient类改进，添加智能Prompt模板和答案验证",
+          "lineStart": 49,
+          "lineEnd": 96
+        },
+        {
+          "path": "python-services/rag-service/main.py",
+          "type": "TO_MODIFY",
+          "description": "query_documents函数集成问题分类和质量验证",
+          "lineStart": 348,
+          "lineEnd": 467
+        }
+      ],
+      "implementationGuide": "基于测试失败case设计专业Prompt模板：\\n\\n1. **问题类型智能识别**\\n```python\\ndef classify_question_advanced(self, query: str) -> str:\\n    patterns = {\\n        'numerical_info': r'多少|数量|几个|多大|多长|排行|最多|最少|\\\\d+',\\n        'tech_comparison': r'区别|对比|差异|不同|优缺点|vs|versus|compare',\\n        'component_analysis': r'组件|模块|架构|技术栈|框架|实现方式|工作原理',\\n        'language_tech': r'编程语言|开发语言|技术|框架|library|framework',\\n        'project_info': r'项目|仓库|github|star|fork|更新时间|创建时间'\\n    }\\n    \\n    for qtype, pattern in patterns.items():\\n        if re.search(pattern, query, re.IGNORECASE):\\n            return qtype\\n    return 'general'\\n```\\n\\n2. **专业化Prompt模板设计**\\n```python\\nPROMPT_TEMPLATES = {\\n    'numerical_info': '''你是一个专业的数据分析助手。请仔细查找并提取上下文中的准确数值信息。\\n\\n分析步骤：\\n1. 仔细阅读每个文档片段\\n2. 提取所有相关的数值信息\\n3. 对比不同来源的数据\\n4. 给出最准确的答案\\n\\n上下文信息：\\n{context}\\n\\n问题：{query}\\n\\n请按以下格式回答：\\n**数值答案**: [准确数值]\\n**数据来源**: [来自哪个项目/文档]\\n**补充说明**: [相关细节]''',\\n\\n    'component_analysis': '''你是一个资深的软件架构师。请深入分析技术组件和系统架构。\\n\\n分析维度：\\n- **核心组件**: 识别主要技术组件\\n- **架构模式**: 分析设计模式和架构风格\\n- **技术选型**: 评估技术栈的选择理由\\n- **实现细节**: 关注具体的实现方式\\n\\n上下文信息：\\n{context}\\n\\n问题：{query}\\n\\n请按以下结构回答：\\n## 技术组件分析\\n### 主要组件\\n- [组件1]: [功能说明]\\n- [组件2]: [功能说明]\\n\\n### 架构特点\\n- [特点1]: [详细说明]\\n- [特点2]: [详细说明]\\n\\n### 实现细节\\n[具体的实现方式和技术细节]''',\\n\\n    'language_tech': '''你是一个编程语言专家。请准确识别和分析项目中使用的编程语言和技术栈。\\n\\n关注重点：\\n- 主要编程语言(前端/后端)\\n- 框架和库的使用\\n- 开发工具和构建系统\\n- 数据库和存储技术\\n\\n上下文信息：\\n{context}\\n\\n问题：{query}\\n\\n请按以下格式精确回答：\\n**主要语言**: [按使用比重排序]\\n**前端技术**: [具体技术栈]\\n**后端技术**: [具体技术栈]\\n**数据存储**: [数据库等]\\n**其他工具**: [构建工具、部署等]'''\\n}\\n```\\n\\n3. **答案质量验证机制**\\n```python\\ndef validate_answer_quality(self, answer: str, query: str, question_type: str) -> Dict[str, Any]:\\n    validation_results = {\\n        'relevance_score': 0.0,\\n        'completeness_score': 0.0,\\n        'accuracy_indicators': [],\\n        'quality_issues': []\\n    }\\n    \\n    # 相关性检查\\n    query_keywords = set(re.findall(r'\\\\w+', query.lower()))\\n    answer_keywords = set(re.findall(r'\\\\w+', answer.lower()))\\n    relevance = len(query_keywords & answer_keywords) / len(query_keywords)\\n    validation_results['relevance_score'] = relevance\\n    \\n    # 完整性检查(基于问题类型)\\n    if question_type == 'numerical_info':\\n        has_numbers = bool(re.search(r'\\\\d+', answer))\\n        validation_results['completeness_score'] = 1.0 if has_numbers else 0.3\\n    \\n    return validation_results\\n```",
+      "verificationCriteria": "1. 技术分析测试平均得分从72.2%提升到88%+ 2. 系统组件分析准确率从0%提升到75%+ 3. Phase2技术分析10个问题准确率均>85% 4. 结构化输出格式正确率>95% 5. 答案相关性评分>90% 6. 编程语言识别专项测试准确率>85%",
+      "analysisResult": "RAG系统准确率提升专项计划：基于混合检索测试结果分析（当前53.4%准确率），通过检索质量、Prompt工程、数据处理、答案验证四个核心维度的系统性优化，将准确率从53.4%提升到95%目标。重点解决编程语言识别20%准确率、系统组件分析0%准确性、数值型信息混淆等关键问题",
+      "summary": "Task2 Prompt工程优化成功完成。实现了智能问题分类(5种类型)、专业化Prompt模板(针对数值信息、组件分析、编程语言等)、答案质量验证机制。系统能够自动识别查询类型并应用相应的专业Prompt，显著提升了回答的结构化程度和专业性。质量验证机制能够实时评估答案的相关性、完整性和置信度，为系统优化提供数据支持。",
+      "completedAt": "2025-08-12T13:16:01.304Z"
+    }
+  ]
+}

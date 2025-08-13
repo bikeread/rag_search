@@ -37,7 +37,7 @@ import { toast } from 'react-hot-toast'
 const { Search } = Input
 const { Dragger } = Upload
 
-export const DocumentListPage: React.FC = () => {
+const DocumentListPage: React.FC = () => {
   const navigate = useNavigate()
   const { isMobile } = useResponsiveView()
   
@@ -371,3 +371,5 @@ export const DocumentListPage: React.FC = () => {
     </div>
   )
 }
+
+export default DocumentListPage

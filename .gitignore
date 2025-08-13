@@ -98,3 +98,8 @@ config/local.yml
 secrets/
 CLAUDE.md
 .claude
+
+### AI提示词工程 ###
+# AI交互提示词工程目录，包含项目相关的提示词和交互记录
+ai-prompts/
+
