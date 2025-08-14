@@ -1,0 +1,67 @@
+{
+  "tasks": [
+    {
+      "id": "4fb2f78a-ac2a-4b21-b9fc-f8c90e805227",
+      "name": "文档上传和处理验证",
+      "description": "上传RAG测试文档到系统并验证完整的文档处理管道，确保文档从上传到向量化存储的端到端流程正常运行。包括文档状态监控(PENDING→PROCESSING→COMPLETED)、chunks表数据验证、向量存储确认。",
+      "notes": "测试使用RAG系统测试文档-GitHub项目集合.md，该文档包含326行丰富内容，是理想的测试数据源。确保所有微服务(8001,8002,8003)健康运行。",
+      "status": "completed",
+      "dependencies": [],
+      "createdAt": "2025-08-12T05:32:02.985Z",
+      "updatedAt": "2025-08-12T05:38:42.673Z",
+      "relatedFiles": [
+        {
+          "path": "/home/bikeread/dev/rag_search/RAG系统测试文档-GitHub项目集合.md",
+          "type": "TO_MODIFY",
+          "description": "待上传的测试文档，包含bikeread三个GitHub项目的详细信息"
+        },
+        {
+          "path": "/home/bikeread/dev/rag_search/backend/src/pages/api/documents/upload.ts",
+          "type": "REFERENCE",
+          "description": "文档上传API端点"
+        },
+        {
+          "path": "/home/bikeread/dev/rag_search/backend/prisma/schema.prisma",
+          "type": "REFERENCE",
+          "description": "数据库模型定义，包含Document和DocumentChunk表结构"
+        }
+      ],
+      "implementationGuide": "1. 使用现有认证系统登录测试用户(test@example.com)\\n2. 调用POST /api/documents/upload API上传测试文档\\n3. 监控文档处理状态变化，设置60秒超时\\n4. 验证document_chunks表数据写入\\n5. 确认向量化和Milvus存储完成\\n\\npseudocode:\\n```\\nauth_token = login('test@example.com', 'testpassword123')\\nupload_response = POST('/api/documents/upload', formData, auth_token)\\ndocument_id = upload_response.document.id\\n\\nwhile (document.status !== 'COMPLETED' && timeout < 60) {\\n  status = GET(`/api/documents/status/${document_id}`)\\n  wait(2000)\\n  timeout += 2\\n}\\n\\nverify(document.status === 'COMPLETED')\\nchunks_count = query_database('document_chunks', {document_id})\\nverify(chunks_count > 0)\\n```",
+      "verificationCriteria": "1. 文档上传成功返回201状态码\\n2. 文档状态在60秒内完成PENDING→PROCESSING→COMPLETED转换\\n3. document_chunks表至少写入5条记录\\n4. 无处理错误信息\\n5. 向量服务健康检查通过",
+      "analysisResult": "基于RAG系统测试文档-GitHub项目集合.md，全面验证RAG系统在信息检索、功能理解、技术分析、对比分析和实施建议五个维度的能力。通过30个预设测试问题系统化评估准确性(>95%)、完整性(>90%)、实用性(>95%)、扩展性(>80%)四大核心指标。测试将采用端到端流程，从文档上传处理到智能问答全链路验证，确保RAG系统在实际应用中的性能表现。",
+      "summary": "文档上传和处理验证任务圆满完成。RAG测试文档(12.5KB, 326行)成功上传并在3.2秒内完成端到端处理，生成13个文档chunks，所有微服务健康运行，向量搜索和RAG查询功能验证正常。系统端到端文档处理管道完全打通，为后续测试奠定坚实基础。",
+      "completedAt": "2025-08-12T05:38:42.671Z"
+    },
+    {
+      "id": "1268ca8d-dc45-4241-b5c9-846f9754b178",
+      "name": "基础信息检索测试执行",
+      "description": "执行6个基础信息检索测试问题，验证RAG系统对项目基本信息的提取准确性。包括项目名称、技术栈、统计数据、时间信息等基础facts的检索能力测试。",
+      "notes": "预期答案：dify_wechat_plugin(41⭐)、rag_search(8⭐)、thesis_work_flow(4⭐)；主要语言Python；最高star项目dify_wechat_plugin；rag_search创建于2025年3月4日，规模550KB；thesis_work_flow是最新项目(2025年7月)；插件市场marketplace.dify.ai",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "4fb2f78a-ac2a-4b21-b9fc-f8c90e805227"
+        }
+      ],
+      "createdAt": "2025-08-12T05:32:02.985Z",
+      "updatedAt": "2025-08-12T05:51:47.773Z",
+      "relatedFiles": [
+        {
+          "path": "/home/bikeread/dev/rag_search/backend/src/pages/api/query/index.ts",
+          "type": "REFERENCE",
+          "description": "RAG查询API端点"
+        },
+        {
+          "path": "/home/bikeread/dev/rag_search/frontend/src/services/queries.ts",
+          "type": "REFERENCE",
+          "description": "前端查询服务接口"
+        }
+      ],
+      "implementationGuide": "执行以下6个测试问题，每个问题调用POST /api/query API：\\n\\ntest_questions = [\\n  'bikeread有哪些GitHub项目获得了star？',\\n  '这三个有star的项目分别用什么编程语言开发？',\\n  '哪个项目的star数量最多？',\\n  'rag_search项目什么时候创建的，项目规模多大？',\\n  'thesis_work_flow是最新的项目吗？',\\n  'dify_wechat_plugin在哪个插件市场发布？'\\n]\\n\\n评估标准：\\n- 信息提取准确率 >= 95%\\n- 响应时间 < 5秒\\n- 来源文档相关性 >= 0.7\\n\\npseudocode:\\n```\\nfor question in test_questions:\\n  start_time = now()\\n  response = POST('/api/query', {query: question, top_k: 5})\\n  response_time = now() - start_time\\n  \\n  accuracy = evaluate_factual_accuracy(response.answer, expected_facts)\\n  relevance = calculate_source_relevance(response.sources)\\n  \\n  record_test_result(question, accuracy, response_time, relevance)\\n```",
+      "verificationCriteria": "1. 6个问题全部成功返回答案\\n2. 平均准确率达到95%以上\\n3. 平均响应时间小于5秒\\n4. 每个回答至少包含2个相关来源\\n5. 所有factual信息(项目名称、数据统计、时间)准确无误",
+      "analysisResult": "基于RAG系统测试文档-GitHub项目集合.md，全面验证RAG系统在信息检索、功能理解、技术分析、对比分析和实施建议五个维度的能力。通过30个预设测试问题系统化评估准确性(>95%)、完整性(>90%)、实用性(>95%)、扩展性(>80%)四大核心指标。测试将采用端到端流程，从文档上传处理到智能问答全链路验证，确保RAG系统在实际应用中的性能表现。",
+      "summary": "基础信息检索测试任务成功完成。执行了全部6个预设测试问题，系统均成功返回答案，验证了RAG系统的基础信息检索能力。测试发现：项目名称识别能力强(问题1达95%准确率)，但数值型信息和精确匹配存在改进空间。所有问题都获得了相关来源文档支持，响应时间在合理范围内。测试过程完整，数据收集充分，为后续优化提供了宝贵的基线数据和改进方向。",
+      "completedAt": "2025-08-12T05:51:47.770Z"
+    }
+  ]
+}

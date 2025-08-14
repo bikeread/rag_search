@@ -1,0 +1,310 @@
+/* Apple Design System 主题样式 */
+
+/* 全局字体和基础样式 */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #f5f5f7;
+}
+
+/* Ant Design Menu 样式覆盖 */
+.ant-menu-inline .ant-menu-item {
+  margin: 4px 0;
+  border-radius: 12px;
+  height: 44px;
+  line-height: 44px;
+  padding: 0 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ant-menu-inline .ant-menu-item:hover {
+  background: rgba(102, 126, 234, 0.08);
+  color: #667eea;
+}
+
+.ant-menu-inline .ant-menu-item-selected {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+}
+
+.ant-menu-inline .ant-menu-item-selected::after {
+  display: none;
+}
+
+.ant-menu-inline .ant-menu-item-selected .ant-menu-item-icon {
+  color: white;
+}
+
+/* Ant Design Button 样式增强 */
+.ant-btn {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+}
+
+.ant-btn:hover {
+  transform: translateY(-1px);
+}
+
+.ant-btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+}
+
+.ant-btn-primary:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Ant Design Card 样式增强 */
+.ant-card {
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  backdrop-filter: blur(20px);
+  background: rgba(255,255,255,0.95);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ant-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+}
+
+.ant-card-head {
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  padding: 16px 24px;
+}
+
+.ant-card-body {
+  padding: 24px;
+}
+
+/* Ant Design Input 样式增强 */
+.ant-input,
+.ant-input-affix-wrapper {
+  border-radius: 12px;
+  border: 1px solid #d0d0d3;
+  background: #ffffff;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ant-input:focus,
+.ant-input-affix-wrapper:focus-within {
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.ant-input::placeholder {
+  color: #86868b;
+}
+
+/* Ant Design Select 样式增强 */
+.ant-select .ant-select-selector {
+  border-radius: 12px;
+  border: 1px solid #d0d0d3;
+  background: #ffffff;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ant-select:hover .ant-select-selector {
+  border-color: #667eea;
+}
+
+.ant-select-focused .ant-select-selector {
+  border-color: #667eea !important;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+}
+
+/* Ant Design Table 样式增强 */
+.ant-table {
+  background: transparent;
+}
+
+.ant-table-thead > tr > th {
+  background: rgba(248, 250, 252, 0.8);
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  font-weight: 600;
+  color: #1d1d1f;
+  padding: 16px;
+}
+
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  padding: 16px;
+  color: #1d1d1f;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: rgba(102, 126, 234, 0.04);
+}
+
+/* Ant Design Pagination 样式增强 */
+.ant-pagination {
+  margin: 24px 0 0 0;
+}
+
+.ant-pagination .ant-pagination-item {
+  border-radius: 8px;
+  border: 1px solid #d0d0d3;
+  font-weight: 500;
+}
+
+.ant-pagination .ant-pagination-item-active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: transparent;
+}
+
+.ant-pagination .ant-pagination-item-active a {
+  color: white;
+}
+
+/* Ant Design Dropdown 样式增强 */
+.ant-dropdown {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+  backdrop-filter: blur(20px);
+  background: rgba(255,255,255,0.95);
+}
+
+.ant-dropdown-menu {
+  border-radius: 12px;
+  border: none;
+  padding: 8px;
+}
+
+.ant-dropdown-menu-item {
+  border-radius: 8px;
+  margin: 2px 0;
+  padding: 8px 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ant-dropdown-menu-item:hover {
+  background: rgba(102, 126, 234, 0.08);
+  color: #667eea;
+}
+
+/* Ant Design Progress 样式增强 */
+.ant-progress-bg {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Ant Design Tag 样式增强 */
+.ant-tag {
+  border-radius: 12px;
+  border: none;
+  font-weight: 500;
+  padding: 4px 12px;
+}
+
+/* Ant Design Empty 样式增强 */
+.ant-empty {
+  color: #6e6e73;
+}
+
+.ant-empty-description {
+  color: #6e6e73;
+}
+
+/* Ant Design Spin 样式增强 */
+.ant-spin-dot-item {
+  background-color: #667eea;
+}
+
+/* Ant Design Upload 样式增强 */
+.ant-upload.ant-upload-drag {
+  border-radius: 16px;
+  border: 2px dashed #d0d0d3;
+  background: rgba(255,255,255,0.5);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ant-upload.ant-upload-drag:hover {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.04);
+}
+
+/* Ant Design Form 样式增强 */
+.ant-form-item-label > label {
+  font-weight: 500;
+  color: #1d1d1f;
+}
+
+.ant-form-item-explain-error {
+  color: #ff4d4f;
+  font-size: 13px;
+}
+
+/* Ant Design Message 样式增强 */
+.ant-message {
+  top: 24px;
+}
+
+.ant-message-notice-content {
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+  backdrop-filter: blur(20px);
+  background: rgba(255,255,255,0.95);
+}
+
+/* Ant Design Modal 样式增强 */
+.ant-modal-content {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 48px rgba(0,0,0,0.16);
+}
+
+.ant-modal-header {
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  padding: 20px 24px;
+}
+
+.ant-modal-body {
+  padding: 24px;
+}
+
+.ant-modal-footer {
+  border-top: 1px solid rgba(0,0,0,0.04);
+  padding: 16px 24px;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.04);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.16);
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.24);
+}
+
+/* 响应式断点 */
+@media (max-width: 768px) {
+  .ant-card-body {
+    padding: 16px;
+  }
+  
+  .ant-table-thead > tr > th,
+  .ant-table-tbody > tr > td {
+    padding: 12px 8px;
+  }
+}

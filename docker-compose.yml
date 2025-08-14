@@ -9,7 +9,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:3001
+      - VITE_API_BASE_URL=http://localhost:3001
     depends_on:
       - backend
     volumes:
@@ -24,7 +24,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "3001:3000"
+      - "3001:3001"
     environment:
       - DATABASE_URL=postgresql://postgres:password@postgres:5432/rag_db
       - REDIS_URL=redis://redis:6379
@@ -39,6 +39,9 @@ services:
       - redis
       - rabbitmq
       - milvus
+      - document-processor
+      - vector-service
+      - rag-service
     volumes:
       - ./backend:/app
       - /app/node_modules
@@ -196,7 +199,7 @@ services:
       timeout: 20s
       retries: 3
 
-  # Ollama 服务
+  # Ollama 服务 (CPU模式)
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
@@ -204,13 +207,8 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    environment:
+      - OLLAMA_HOST=0.0.0.0
 
   # 监控服务 (保留接口，暂不激活)
   prometheus:

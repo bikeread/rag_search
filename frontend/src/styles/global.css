@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 修复 Tailwind 与 Ant Design 的样式冲突 */
+.ant-row {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.ant-col {
+  position: relative !important;
+  max-width: 100% !important;
+  min-height: 1px !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  display: block !important;
+}
+
+/* 确保 Ant Design 卡片和统计组件正常显示 */
+.ant-card {
+  display: block !important;
+}
+
+.ant-statistic {
+  display: block !important;
+}
+
+.ant-list {
+  display: block !important;
+}
+
+.ant-list-item {
+  display: flex !important;
+  align-items: flex-start !important;
+}
+
+/* 确保下拉菜单和用户信息正常显示 */
+.ant-space {
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.ant-dropdown-trigger {
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+/* 自定义样式 */
+.ant-layout-sider {
+  background: #fff !important;
+}
+
+.ant-layout-header {
+  background: #fff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+
+/* 聊天界面样式 */
+.chat-container {
+  height: calc(100vh - 200px);
+}
+
+/* 上传组件样式 */
+.ant-upload-drag {
+  background-color: #fafafa !important;
+}
+
+/* 响应式表格 */
+@media (max-width: 768px) {
+  .ant-table {
+    font-size: 12px;
+  }
+}

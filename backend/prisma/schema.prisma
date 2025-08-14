@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -8,29 +9,71 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String     @id @default(cuid())
+  email     String     @unique
   name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
+  password  String?
+  role      UserRole   @default(USER)
+  avatar    String?
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  accounts  Account[]
   documents Document[]
   queries   Query[]
+  sessions  Session[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
 }
 
 model Document {
-  id            String           @id @default(cuid())
-  filename      String
-  originalName  String
-  mimeType      String
-  size          Int
-  status        DocumentStatus   @default(PENDING)
-  uploadedBy    String
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
-  
-  user          User            @relation(fields: [uploadedBy], references: [id])
-  chunks        DocumentChunk[]
+  id                    String          @id @default(cuid())
+  filename              String
+  originalName          String
+  mimeType              String
+  size                  Int
+  path                  String?
+  status                DocumentStatus  @default(PENDING)
+  uploadedBy            String
+  processingStartedAt   DateTime?
+  processingCompletedAt DateTime?
+  errorMessage          String?
+  metadata              Json?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  chunks                DocumentChunk[]
+  user                  User            @relation(fields: [uploadedBy], references: [id])
+
+  @@map("documents")
 }
 
 model DocumentChunk {
@@ -38,22 +81,46 @@ model DocumentChunk {
   documentId String
   content    String
   chunkIndex Int
-  vectorId   String   // Milvus vector ID
+  vectorId   String
   metadata   Json?
   createdAt  DateTime @default(now())
-  
-  document   Document @relation(fields: [documentId], references: [id])
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, chunkIndex])
+  @@map("document_chunks")
 }
 
 model Query {
+  id           String      @id @default(cuid())
+  text         String
+  response     String?
+  userId       String
+  responseTime Int?
+  sources      Json?
+  status       QueryStatus @default(PENDING)
+  metadata     Json?
+  createdAt    DateTime    @default(now())
+  deletedAt    DateTime?
+  user         User        @relation(fields: [userId], references: [id])
+
+  @@map("queries")
+}
+
+model SystemConfig {
   id          String   @id @default(cuid())
-  text        String
-  response    String?
-  userId      String
-  responseTime Int?    // 响应时间(ms)
+  key         String   @unique
+  value       Json
+  description String?
   createdAt   DateTime @default(now())
-  
-  user        User     @relation(fields: [userId], references: [id])
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_config")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  SUPER_ADMIN
 }
 
 enum DocumentStatus {
@@ -61,4 +128,13 @@ enum DocumentStatus {
   PROCESSING
   COMPLETED
   FAILED
+  DELETED
+}
+
+enum QueryStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  DELETED
 }

@@ -1,0 +1,174 @@
+{
+  "test_execution_summary": {
+    "test_date": "2025-08-12",
+    "test_time_range": "19:35-19:40",
+    "test_duration_seconds": 324.5,
+    "document_id": "cme8gn7nn002arc9k88c3uk46",
+    "document_name": "RAG系统测试文档-GitHub项目集合.md",
+    "document_chunks": 13,
+    "test_configuration": {
+      "retrieval_mode": "hybrid",
+      "vector_weight": 0.8,
+      "bm25_weight": 0.2,
+      "top_k": 3,
+      "timeout_seconds": 30
+    }
+  },
+  "overall_performance": {
+    "total_questions": 30,
+    "successful_queries": 26,
+    "failed_queries": 4,
+    "success_rate_percent": 86.7,
+    "average_response_time_seconds": 11.32,
+    "fastest_response_seconds": 3.91,
+    "slowest_response_seconds": 18.80
+  },
+  "quality_metrics": {
+    "accuracy": {
+      "average_score": 53.4,
+      "target_score": 95,
+      "achieved": false
+    },
+    "completeness": {
+      "average_score": 41.2,
+      "target_score": 90,
+      "achieved": false
+    },
+    "relevance": {
+      "average_score": 86.7,
+      "target_score": 95,
+      "achieved": false
+    },
+    "overall": {
+      "average_score": 60.4,
+      "target_score": 90,
+      "achieved": false
+    }
+  },
+  "phase_performance": {
+    "phase_1_basic_info": {
+      "name": "Basic Information Retrieval",
+      "questions_count": 10,
+      "success_rate_percent": 100.0,
+      "average_score": 66.2,
+      "best_question": {
+        "question": "哪个项目的star数量最多？",
+        "score": 95.0,
+        "response_time": 5.90
+      },
+      "worst_question": {
+        "question": "这三个有star的项目分别用什么编程语言开发？",
+        "score": 40.0,
+        "response_time": 11.18
+      }
+    },
+    "phase_2_technical": {
+      "name": "Technical Analysis",
+      "questions_count": 10,
+      "success_rate_percent": 100.0,
+      "average_score": 72.2,
+      "best_question": {
+        "question": "比较三个项目的技术栈和应用领域",
+        "score": 90.0,
+        "response_time": 15.40
+      },
+      "worst_question": {
+        "question": "从创建时间看，bikeread的项目发展轨迹如何？",
+        "score": 33.3,
+        "response_time": 12.59
+      }
+    },
+    "phase_3_advanced": {
+      "name": "Advanced Analysis",
+      "questions_count": 10,
+      "success_rate_percent": 60.0,
+      "average_score": 43.0,
+      "failure_reason": "JWT Token过期导致后4个问题失败",
+      "best_question": {
+        "question": "dify_wechat_plugin的配置参数有哪些类型？",
+        "score": 90.0,
+        "response_time": 15.88
+      }
+    }
+  },
+  "technical_issues_identified": {
+    "jwt_management": {
+      "severity": "critical",
+      "description": "JWT Token在测试过程中过期，导致4个查询失败",
+      "error_message": "Bad \"options.expiresIn\" option the payload already has an \"exp\" property.",
+      "impact": "Phase 3阶段成功率降至60%"
+    },
+    "answer_quality": {
+      "severity": "high",
+      "description": "回答质量不稳定，部分查询偏题或重复",
+      "examples": [
+        "编程语言识别问题 (20%准确性)",
+        "系统组件分析不足 (0%准确性)",
+        "LLM特性描述重复 (0%准确性)"
+      ]
+    },
+    "response_time": {
+      "severity": "medium",
+      "description": "平均响应时间11.32秒，超出理想范围",
+      "target": "< 5秒",
+      "current": "11.32秒"
+    }
+  },
+  "hybrid_retrieval_evaluation": {
+    "vector_search_performance": {
+      "search_precision": "high",
+      "average_relevance": 86.7,
+      "documents_per_query": 5,
+      "cosine_similarity_working": true
+    },
+    "bm25_fusion": {
+      "fusion_method": "RRF",
+      "weight_distribution": "vector_80%_bm25_20%",
+      "fusion_effectiveness": "good",
+      "document_coverage": "comprehensive"
+    },
+    "retrieval_quality": {
+      "document_relevance": "high",
+      "context_coverage": "good",
+      "multi_document_synthesis": "working"
+    }
+  },
+  "recommendations": {
+    "immediate_fixes": [
+      "修复JWT Token自动续期机制",
+      "实施Token状态检查和刷新逻辑",
+      "调整检索权重参数测试"
+    ],
+    "short_term_improvements": [
+      "优化Prompt工程，提高问题理解精度",
+      "增加top_k到5，提供更多上下文",
+      "实施答案质量检查机制"
+    ],
+    "long_term_enhancements": [
+      "建立更完整的测试数据集",
+      "实施自动化质量监控",
+      "添加多轮对话支持"
+    ]
+  },
+  "system_status": {
+    "overall_grade": "基本可用，需要优化",
+    "production_ready": false,
+    "major_blockers": [
+      "JWT Token管理缺陷",
+      "答案准确性未达标 (53.4% vs 95% target)",
+      "响应时间偏长"
+    ],
+    "strengths": [
+      "混合检索系统架构完整",
+      "能处理复杂多维度查询",
+      "文档检索相关性较高",
+      "系统稳定性良好"
+    ]
+  },
+  "next_steps": {
+    "priority_1_critical": "修复JWT Token管理问题",
+    "priority_2_important": "提升答案准确性和完整性",
+    "priority_3_optimization": "优化系统响应时间",
+    "suggested_retest_timeframe": "修复关键问题后1周内"
+  }
+}

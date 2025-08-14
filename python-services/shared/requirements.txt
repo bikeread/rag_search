@@ -1,0 +1,22 @@
+# 共享组件依赖
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic>=2.5.0
+pydantic-settings
+
+# Milvus相关
+pymilvus==2.3.4
+numpy==1.24.3
+
+# RabbitMQ相关  
+aio-pika==9.3.1
+
+# 日志和工具
+python-json-logger==2.0.7
+
+# HTTP客户端
+aiohttp==3.9.1
+requests==2.31.0
+
+# 兼容性修复
+marshmallow>=3.13.0,<4.0.0
