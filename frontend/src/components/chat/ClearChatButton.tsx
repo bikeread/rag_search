@@ -111,8 +111,13 @@ export const ClearChatButton: React.FC<ClearChatButtonProps> = ({
       <Button 
         icon={<ClearOutlined />}
         type="text"
-        size="small"
         className={`${className}`}
+        style={{
+          borderRadius: 8,
+          fontWeight: 500,
+          color: '#6e6e73',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+        }}
       >
         清空
       </Button>

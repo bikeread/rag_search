@@ -43,71 +43,219 @@ export const ProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <Card title="个人中心" className="shadow-sm">
-        <div className="text-center mb-6">
-          <Avatar size={80} icon={<UserOutlined />} className="mb-4" />
-          <h2 className="text-xl font-semibold">{user?.name || user?.email}</h2>
-          <p className="text-gray-500">用户角色: {user?.role || 'USER'}</p>
+    <div style={{ 
+      maxWidth: 800, 
+      margin: '0 auto', 
+      padding: '24px',
+      background: '#f5f5f7',
+      minHeight: '100vh'
+    }}>
+      <Card 
+        title={
+          <span style={{
+            fontSize: 24,
+            fontWeight: 600,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}>
+            个人中心
+          </span>
+        }
+        bordered={false}
+        style={{
+          borderRadius: 16,
+          boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+          marginBottom: 24
+        }}
+      >
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{
+            width: 100,
+            height: 100,
+            borderRadius: 50,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px',
+            fontSize: 40,
+            color: 'white'
+          }}>
+            <UserOutlined />
+          </div>
+          <h2 style={{ 
+            fontSize: 20, 
+            fontWeight: 600, 
+            color: '#1d1d1f',
+            marginBottom: 8
+          }}>
+            {user?.name || user?.email}
+          </h2>
+          <p style={{ color: '#6e6e73', fontSize: 14 }}>
+            用户角色: {user?.role || 'USER'}
+          </p>
         </div>
 
-        <Divider />
+        <Divider style={{ borderColor: '#f0f0f2' }} />
 
         {!editing ? (
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
             <div>
-              <label className="text-sm text-gray-600 block mb-1">用户名</label>
-              <div className="text-base">{user?.name || '未设置'}</div>
+              <label style={{ 
+                fontSize: 13, 
+                color: '#6e6e73', 
+                display: 'block', 
+                marginBottom: 8,
+                fontWeight: 500
+              }}>
+                用户名
+              </label>
+              <div style={{ 
+                fontSize: 16, 
+                color: '#1d1d1f',
+                fontWeight: 500
+              }}>
+                {user?.name || '未设置'}
+              </div>
             </div>
             <div>
-              <label className="text-sm text-gray-600 block mb-1">邮箱</label>
-              <div className="text-base">{user?.email}</div>
+              <label style={{ 
+                fontSize: 13, 
+                color: '#6e6e73', 
+                display: 'block', 
+                marginBottom: 8,
+                fontWeight: 500
+              }}>
+                邮箱
+              </label>
+              <div style={{ 
+                fontSize: 16, 
+                color: '#1d1d1f',
+                fontWeight: 500
+              }}>
+                {user?.email}
+              </div>
             </div>
             <div>
-              <label className="text-sm text-gray-600 block mb-1">用户ID</label>
-              <div className="text-base text-gray-500 font-mono text-sm">{user?.id}</div>
+              <label style={{ 
+                fontSize: 13, 
+                color: '#6e6e73', 
+                display: 'block', 
+                marginBottom: 8,
+                fontWeight: 500
+              }}>
+                用户ID
+              </label>
+              <div style={{ 
+                fontSize: 14, 
+                color: '#86868b',
+                fontFamily: 'Monaco, Consolas, monospace'
+              }}>
+                {user?.id}
+              </div>
             </div>
             
-            <div className="pt-4">
-              <Button type="primary" icon={<EditOutlined />} onClick={handleEdit}>
+            <div style={{ paddingTop: 16 }}>
+              <Button 
+                type="primary" 
+                icon={<EditOutlined />} 
+                onClick={handleEdit}
+                style={{
+                  borderRadius: 10,
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none',
+                  height: 44,
+                  paddingLeft: 24,
+                  paddingRight: 24,
+                  fontWeight: 500,
+                  boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)'
+                }}
+              >
                 编辑资料
               </Button>
             </div>
           </div>
         ) : (
-          <Form form={form} layout="vertical" className="space-y-4">
+          <Form form={form} layout="vertical">
             <Form.Item
               name="name"
-              label="用户名"
+              label={
+                <span style={{ 
+                  fontSize: 14, 
+                  fontWeight: 500, 
+                  color: '#1d1d1f' 
+                }}>
+                  用户名
+                </span>
+              }
               rules={[
                 { required: true, message: '请输入用户名' },
                 { min: 2, max: 50, message: '用户名长度应为2-50字符' }
               ]}
+              style={{ marginBottom: 24 }}
             >
-              <Input placeholder="请输入用户名" />
+              <Input 
+                placeholder="请输入用户名" 
+                size="large"
+                style={{ borderRadius: 8 }}
+              />
             </Form.Item>
 
             <Form.Item
               name="email"
-              label="邮箱"
+              label={
+                <span style={{ 
+                  fontSize: 14, 
+                  fontWeight: 500, 
+                  color: '#1d1d1f' 
+                }}>
+                  邮箱
+                </span>
+              }
               rules={[
                 { required: true, message: '请输入邮箱' },
                 { type: 'email', message: '请输入有效的邮箱地址' }
               ]}
+              style={{ marginBottom: 32 }}
             >
-              <Input placeholder="请输入邮箱" disabled />
+              <Input 
+                placeholder="请输入邮箱" 
+                disabled 
+                size="large"
+                style={{ borderRadius: 8 }}
+              />
             </Form.Item>
 
-            <Form.Item>
-              <Space>
+            <Form.Item style={{ marginBottom: 0 }}>
+              <Space size={12}>
                 <Button 
                   type="primary" 
                   icon={<SaveOutlined />} 
                   onClick={handleSave}
+                  style={{
+                    borderRadius: 8,
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    border: 'none',
+                    height: 40,
+                    paddingLeft: 20,
+                    paddingRight: 20,
+                    fontWeight: 500,
+                    boxShadow: '0 4px 16px rgba(102, 126, 234, 0.3)'
+                  }}
                 >
                   保存
                 </Button>
-                <Button onClick={handleCancel}>
+                <Button 
+                  onClick={handleCancel}
+                  style={{
+                    borderRadius: 8,
+                    height: 40,
+                    paddingLeft: 20,
+                    paddingRight: 20,
+                    fontWeight: 500
+                  }}
+                >
                   取消
                 </Button>
               </Space>
@@ -116,24 +264,85 @@ export const ProfilePage: React.FC = () => {
         )}
       </Card>
 
-      <Card title="账户统计" className="shadow-sm mt-6">
+      <Card 
+        title={
+          <span style={{
+            fontSize: 20,
+            fontWeight: 600,
+            color: '#1d1d1f'
+          }}>
+            账户统计
+          </span>
+        }
+        bordered={false}
+        style={{
+          borderRadius: 16,
+          boxShadow: '0 4px 24px rgba(0,0,0,0.06)'
+        }}
+      >
         <Spin spinning={documentsLoading}>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600 mb-2">
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(2, 1fr)', 
+            gap: 20 
+          }}>
+            <div style={{
+              textAlign: 'center',
+              padding: 24,
+              borderRadius: 16,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white'
+            }}>
+              <div style={{ 
+                fontSize: 32, 
+                marginBottom: 12,
+                display: 'flex',
+                justifyContent: 'center'
+              }}>
                 <FileTextOutlined />
               </div>
-              <div className="text-2xl font-bold text-blue-600">
+              <div style={{ 
+                fontSize: 28, 
+                fontWeight: 600, 
+                marginBottom: 8
+              }}>
                 {documentsData?.pagination?.total || 0}
               </div>
-              <div className="text-sm text-gray-600">上传文档数</div>
+              <div style={{ 
+                fontSize: 14, 
+                opacity: 0.9
+              }}>
+                上传文档数
+              </div>
             </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600 mb-2">
+            <div style={{
+              textAlign: 'center',
+              padding: 24,
+              borderRadius: 16,
+              background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+              color: 'white'
+            }}>
+              <div style={{ 
+                fontSize: 32, 
+                marginBottom: 12,
+                display: 'flex',
+                justifyContent: 'center'
+              }}>
                 <MessageOutlined />
               </div>
-              <div className="text-2xl font-bold text-green-600">--</div>
-              <div className="text-sm text-gray-600">AI对话次数</div>
+              <div style={{ 
+                fontSize: 28, 
+                fontWeight: 600, 
+                marginBottom: 8
+              }}>
+                --
+              </div>
+              <div style={{ 
+                fontSize: 14, 
+                opacity: 0.9
+              }}>
+                AI对话次数
+              </div>
             </div>
           </div>
         </Spin>

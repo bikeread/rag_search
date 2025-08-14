@@ -21,23 +21,23 @@ export const MainLayout: React.FC = () => {
   const menuItems = [
     {
       key: '/dashboard',
-      icon: <DashboardOutlined />,
-      label: '仪表板',
+      icon: <DashboardOutlined style={{ fontSize: 18 }} />,
+      label: <span style={{ fontSize: 15, fontWeight: 500 }}>仪表板</span>,
     },
     {
       key: '/chat',
-      icon: <MessageOutlined />,
-      label: 'AI对话',
+      icon: <MessageOutlined style={{ fontSize: 18 }} />,
+      label: <span style={{ fontSize: 15, fontWeight: 500 }}>AI对话</span>,
     },
     {
       key: '/documents',
-      icon: <FileTextOutlined />,
-      label: '文档管理',
+      icon: <FileTextOutlined style={{ fontSize: 18 }} />,
+      label: <span style={{ fontSize: 15, fontWeight: 500 }}>文档管理</span>,
     },
     {
       key: '/profile',
-      icon: <UserOutlined />,
-      label: '个人中心',
+      icon: <UserOutlined style={{ fontSize: 18 }} />,
+      label: <span style={{ fontSize: 15, fontWeight: 500 }}>个人中心</span>,
     },
   ]
 
@@ -60,10 +60,35 @@ export const MainLayout: React.FC = () => {
   ]
 
   return (
-    <Layout className="min-h-screen">
-      <Sider width={240} className="bg-white shadow-sm">
-        <div className="h-16 flex items-center justify-center border-b">
-          <Text className="text-xl font-bold text-blue-600">
+    <Layout style={{ minHeight: '100vh', background: '#f5f5f7' }}>
+      <Sider 
+        width={260} 
+        style={{
+          background: 'rgba(255,255,255,0.95)',
+          backdropFilter: 'blur(20px)',
+          borderRight: '1px solid rgba(0,0,0,0.04)',
+          position: 'fixed',
+          height: '100vh',
+          left: 0,
+          top: 0,
+          zIndex: 100
+        }}
+      >
+        <div style={{
+          height: 80,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          borderBottom: '1px solid rgba(0,0,0,0.04)',
+          marginBottom: 16
+        }}>
+          <Text style={{
+            fontSize: 20,
+            fontWeight: 600,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}>
             RAG智能问答
           </Text>
         </div>
@@ -71,26 +96,60 @@ export const MainLayout: React.FC = () => {
           mode="inline"
           selectedKeys={[location.pathname]}
           items={menuItems}
-          className="border-none"
+          style={{
+            border: 'none',
+            background: 'transparent',
+            padding: '0 16px'
+          }}
           onClick={({ key }) => navigate(key)}
         />
       </Sider>
 
-      <Layout>
-        <Header className="bg-white shadow-sm px-6 flex items-center justify-between">
-          <div className="text-lg font-medium">
+      <Layout style={{ marginLeft: 260, background: 'transparent' }}>
+        <Header style={{
+          background: 'rgba(255,255,255,0.95)',
+          backdropFilter: 'blur(20px)',
+          padding: '0 32px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid rgba(0,0,0,0.04)',
+          position: 'sticky',
+          top: 0,
+          zIndex: 50
+        }}>
+          <div style={{
+            fontSize: 18,
+            fontWeight: 500,
+            color: '#1d1d1f'
+          }}>
             {menuItems.find(item => item.key === location.pathname)?.label || '首页'}
           </div>
           
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-            <Space className="cursor-pointer">
-              <Avatar icon={<UserOutlined />} />
-              <Text>{user?.name || user?.email}</Text>
+            <Space style={{ cursor: 'pointer' }}>
+              <div style={{
+                width: 36,
+                height: 36,
+                borderRadius: 18,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <UserOutlined style={{ color: 'white', fontSize: 16 }} />
+              </div>
+              <Text style={{ 
+                fontWeight: 500,
+                color: '#1d1d1f'
+              }}>
+                {user?.name || user?.email}
+              </Text>
             </Space>
           </Dropdown>
         </Header>
 
-        <Content className="p-6 bg-gray-50">
+        <Content style={{ background: 'transparent' }}>
           <Outlet />
         </Content>
       </Layout>
